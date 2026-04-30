@@ -1,0 +1,15 @@
+# Backend
+/backend/target
+/backend/.env
+
+# Frontend
+/frontend/node_modules
+/frontend/dist
+/frontend/.env
+
+# Storage
+/storage
+
+# IDE
+.DS_Store
+.vscode/
