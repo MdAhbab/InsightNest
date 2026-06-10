@@ -3,7 +3,9 @@ package com.insightnest.program;
 import com.insightnest.exception.ApiException;
 import com.insightnest.program.dto.ApplicationStatusRequest;
 import com.insightnest.program.dto.ProgramApplicationRequest;
+import com.insightnest.program.dto.ProgramApplicationResponse;
 import com.insightnest.program.dto.ProgramRequest;
+import com.insightnest.program.dto.ProgramResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/programs")
+@RequestMapping("/api/v1/programs")
 public class ProgramController {
     private final ProgramRepository programRepository;
     private final ProgramService programService;
@@ -27,51 +29,54 @@ public class ProgramController {
     }
 
     @GetMapping
-    public Page<Program> list(
+    public Page<ProgramResponse> list(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return programRepository.findAll(pageable);
+        return programRepository.findAll(pageable).map(ProgramResponse::from);
     }
 
     @GetMapping("/{id}")
-    public Program get(@PathVariable Long id) {
+    public ProgramResponse get(@PathVariable Long id) {
         return programRepository.findById(id)
+                .map(ProgramResponse::from)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Program not found"));
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public Program create(@Valid @RequestBody ProgramRequest request) {
-        return programService.createProgram(request);
+    public ProgramResponse create(@Valid @RequestBody ProgramRequest request) {
+        return ProgramResponse.from(programService.createProgram(request));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public Program update(@PathVariable Long id, @Valid @RequestBody ProgramRequest request) {
-        return programService.updateProgram(id, request);
+    public ProgramResponse update(@PathVariable Long id, @Valid @RequestBody ProgramRequest request) {
+        return ProgramResponse.from(programService.updateProgram(id, request));
     }
 
     @PostMapping("/{id}/apply")
     @PreAuthorize("hasRole('LEARNER')")
-    public ProgramApplication apply(@PathVariable Long id, @Valid @RequestBody ProgramApplicationRequest request) {
-        return programService.applyToProgram(id, request);
+    public ProgramApplicationResponse apply(@PathVariable Long id,
+                                            @Valid @RequestBody ProgramApplicationRequest request) {
+        return ProgramApplicationResponse.from(programService.applyToProgram(id, request));
     }
 
     @GetMapping("/applications/me")
     @PreAuthorize("hasRole('LEARNER')")
-    public List<ProgramApplication> myApplications() {
-        return programService.getMyApplications();
+    public List<ProgramApplicationResponse> myApplications() {
+        return programService.getMyApplications().stream().map(ProgramApplicationResponse::from).toList();
     }
 
     @GetMapping("/applications")
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<ProgramApplication> allApplications(
+    public Page<ProgramApplicationResponse> allApplications(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return programService.getAllApplications(pageable);
+        return programService.getAllApplications(pageable).map(ProgramApplicationResponse::from);
     }
 
     @PatchMapping("/applications/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ProgramApplication updateStatus(@PathVariable Long id, @Valid @RequestBody ApplicationStatusRequest request) {
-        return programService.updateApplicationStatus(id, request);
+    public ProgramApplicationResponse updateStatus(@PathVariable Long id,
+                                                   @Valid @RequestBody ApplicationStatusRequest request) {
+        return ProgramApplicationResponse.from(programService.updateApplicationStatus(id, request));
     }
 }

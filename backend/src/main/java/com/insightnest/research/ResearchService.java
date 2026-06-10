@@ -1,5 +1,7 @@
 package com.insightnest.research;
 
+import com.insightnest.common.events.JoinRequestReviewedEvent;
+import com.insightnest.common.events.JoinRequestSubmittedEvent;
 import com.insightnest.exception.ApiException;
 import com.insightnest.research.dto.ResearchJoinRequestDto;
 import com.insightnest.research.dto.ResearchJoinStatusRequest;
@@ -7,6 +9,7 @@ import com.insightnest.research.dto.ResearchProjectRequest;
 import com.insightnest.research.dto.ResearchProjectStatusRequest;
 import com.insightnest.user.User;
 import com.insightnest.user.UserService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -17,13 +20,16 @@ public class ResearchService {
     private final ResearchProjectRepository projectRepository;
     private final ResearchJoinRequestRepository joinRequestRepository;
     private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ResearchService(ResearchProjectRepository projectRepository,
                            ResearchJoinRequestRepository joinRequestRepository,
-                           UserService userService) {
+                           UserService userService,
+                           ApplicationEventPublisher eventPublisher) {
         this.projectRepository = projectRepository;
         this.joinRequestRepository = joinRequestRepository;
         this.userService = userService;
+        this.eventPublisher = eventPublisher;
     }
 
     public ResearchProject createProject(ResearchProjectRequest request) {
@@ -60,7 +66,10 @@ public class ResearchService {
         joinRequest.setRequester(user);
         joinRequest.setMessage(request.getMessage());
         joinRequest.setSkills(request.getSkills());
-        return joinRequestRepository.save(joinRequest);
+        ResearchJoinRequest saved = joinRequestRepository.save(joinRequest);
+        eventPublisher.publishEvent(new JoinRequestSubmittedEvent(project.getCreatedBy(),
+                project.getTitle(), user.getFullName()));
+        return saved;
     }
 
     public List<ResearchJoinRequest> getOwnedRequests() {
@@ -76,6 +85,9 @@ public class ResearchService {
             throw new ApiException(HttpStatus.FORBIDDEN, "Not project owner");
         }
         joinRequest.setStatus(request.getStatus());
-        return joinRequestRepository.save(joinRequest);
+        ResearchJoinRequest saved = joinRequestRepository.save(joinRequest);
+        eventPublisher.publishEvent(new JoinRequestReviewedEvent(saved.getRequester(),
+                saved.getProject().getTitle(), saved.getStatus().name()));
+        return saved;
     }
 }

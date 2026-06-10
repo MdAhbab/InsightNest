@@ -1,5 +1,7 @@
 package com.insightnest.program;
 
+import com.insightnest.common.events.ApplicationStatusChangedEvent;
+import com.insightnest.common.events.AuditEvent;
 import com.insightnest.exception.ApiException;
 import com.insightnest.program.dto.ApplicationStatusRequest;
 import com.insightnest.program.dto.ProgramApplicationRequest;
@@ -9,6 +11,7 @@ import com.insightnest.university.UniversityRepository;
 import com.insightnest.user.Role;
 import com.insightnest.user.User;
 import com.insightnest.user.UserService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -23,15 +26,18 @@ public class ProgramService {
     private final ProgramApplicationRepository programApplicationRepository;
     private final UniversityRepository universityRepository;
     private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ProgramService(ProgramRepository programRepository,
                           ProgramApplicationRepository programApplicationRepository,
                           UniversityRepository universityRepository,
-                          UserService userService) {
+                          UserService userService,
+                          ApplicationEventPublisher eventPublisher) {
         this.programRepository = programRepository;
         this.programApplicationRepository = programApplicationRepository;
         this.universityRepository = universityRepository;
         this.userService = userService;
+        this.eventPublisher = eventPublisher;
     }
 
     public Program createProgram(ProgramRequest request) {
@@ -39,7 +45,10 @@ public class ProgramService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "University not found"));
         Program program = new Program();
         applyProgram(program, request, university);
-        return programRepository.save(program);
+        Program saved = programRepository.save(program);
+        eventPublisher.publishEvent(new AuditEvent(userService.getCurrentUser(), "PROGRAM_CREATED",
+                "Program", saved.getId(), saved.getName()));
+        return saved;
     }
 
     public Program updateProgram(Long id, ProgramRequest request) {
@@ -48,7 +57,10 @@ public class ProgramService {
         University university = universityRepository.findById(request.getUniversityId())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "University not found"));
         applyProgram(program, request, university);
-        return programRepository.save(program);
+        Program saved = programRepository.save(program);
+        eventPublisher.publishEvent(new AuditEvent(userService.getCurrentUser(), "PROGRAM_UPDATED",
+                "Program", saved.getId(), saved.getName()));
+        return saved;
     }
 
     public ProgramApplication applyToProgram(Long programId, ProgramApplicationRequest request) {
@@ -91,7 +103,12 @@ public class ProgramService {
         if (request.getNotes() != null) {
             application.setNotes(request.getNotes());
         }
-        return programApplicationRepository.save(application);
+        ProgramApplication saved = programApplicationRepository.save(application);
+        eventPublisher.publishEvent(new ApplicationStatusChangedEvent(saved.getLearner(),
+                "Program application", saved.getProgram().getName(), saved.getStatus().name()));
+        eventPublisher.publishEvent(new AuditEvent(userService.getCurrentUser(), "PROGRAM_APPLICATION_REVIEWED",
+                "ProgramApplication", saved.getId(), saved.getStatus().name()));
+        return saved;
     }
 
     private void applyProgram(Program program, ProgramRequest request, University university) {

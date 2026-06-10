@@ -1,5 +1,6 @@
 package com.insightnest.resource;
 
+import com.insightnest.resource.dto.ResourceResponse;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.net.URLEncoder;
 
 @RestController
-@RequestMapping("/api/resources")
+@RequestMapping("/api/v1/resources")
 public class LibraryResourceController {
     private final LibraryResourceService resourceService;
 
@@ -25,18 +26,18 @@ public class LibraryResourceController {
     }
 
     @GetMapping
-    public Page<LibraryResource> list(
+    public Page<ResourceResponse> list(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return resourceService.list(pageable);
+        return resourceService.list(pageable).map(ResourceResponse::from);
     }
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('LEARNER','FACULTY')")
-    public LibraryResource upload(@RequestParam String title,
-                                  @RequestParam(required = false) String description,
-                                  @RequestParam(defaultValue = "true") boolean publicAccess,
-                                  @RequestParam MultipartFile file) {
-        return resourceService.upload(title, description, publicAccess, file);
+    public ResourceResponse upload(@RequestParam String title,
+                                   @RequestParam(required = false) String description,
+                                   @RequestParam(defaultValue = "true") boolean publicAccess,
+                                   @RequestParam MultipartFile file) {
+        return ResourceResponse.from(resourceService.upload(title, description, publicAccess, file));
     }
 
     @GetMapping("/{id}/download")

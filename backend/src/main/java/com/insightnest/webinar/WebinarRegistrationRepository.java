@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface WebinarRegistrationRepository extends JpaRepository<WebinarRegistration, Long> {
-    @EntityGraph(attributePaths = {"webinar", "webinar.host"})
+    @EntityGraph(attributePaths = {"webinar", "webinar.host"}, type = EntityGraph.EntityGraphType.LOAD)
     List<WebinarRegistration> findByUser(User user);
 
     Optional<WebinarRegistration> findByWebinarAndUser(Webinar webinar, User user);

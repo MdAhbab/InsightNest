@@ -1,11 +1,13 @@
 import { getScholarships } from "../api/catalog";
 import useFetch from "../hooks/useFetch";
 import { Loading, ErrorState, EmptyState } from "../components/AsyncStates";
+import useSavedItems from "../hooks/useSavedItems";
 
 const fmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
 const ScholarshipsPage = () => {
   const { data, loading, error, retry } = useFetch(getScholarships);
+  const saved = useSavedItems("SCHOLARSHIP");
 
   return (
     <div className="page-stack">
@@ -69,6 +71,17 @@ const ScholarshipsPage = () => {
                     </span>
                   ) : (
                     <span className="tag status-muted">No deadline set</span>
+                  )}
+                  {saved.enabled && (
+                    <button
+                      type="button"
+                      className={`save-btn${saved.isSaved(scholarship.id) ? " saved" : ""}`}
+                      disabled={saved.busyId === scholarship.id}
+                      aria-pressed={saved.isSaved(scholarship.id)}
+                      onClick={() => saved.toggle(scholarship.id)}
+                    >
+                      {saved.isSaved(scholarship.id) ? "Saved" : "Save"}
+                    </button>
                   )}
                 </div>
               </article>

@@ -7,6 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ProgramRepository extends JpaRepository<Program, Long> {
     @Override
-    @EntityGraph(attributePaths = "university")
+    @EntityGraph(attributePaths = "university", type = EntityGraph.EntityGraphType.LOAD)
     Page<Program> findAll(Pageable pageable);
 }

@@ -13,6 +13,9 @@ import {
   ScholarshipApplication,
   WebinarRegistration,
   ResearchRequest,
+  AppNotification,
+  SavedItem,
+  SavedItemType,
 } from "../types";
 
 export const getUniversities = async (page = 0, size = 20): Promise<Page<University>> => {
@@ -102,4 +105,32 @@ export const downloadResource = async (id: number, fileName: string): Promise<vo
   a.download = fileName;
   a.click();
   URL.revokeObjectURL(url);
+};
+
+export const getNotifications = async (page = 0, size = 20): Promise<Page<AppNotification>> => {
+  const res = await apiClient.get<Page<AppNotification>>("/notifications", { params: { page, size } });
+  return res.data;
+};
+
+export const markNotificationRead = async (id: number): Promise<AppNotification> => {
+  const res = await apiClient.patch<AppNotification>(`/notifications/${id}/read`);
+  return res.data;
+};
+
+export const markAllNotificationsRead = async (): Promise<void> => {
+  await apiClient.post("/notifications/read-all");
+};
+
+export const getSavedItems = async (): Promise<SavedItem[]> => {
+  const res = await apiClient.get<SavedItem[]>("/saved-items");
+  return res.data;
+};
+
+export const createSavedItem = async (payload: { itemType: SavedItemType; itemId: number }): Promise<SavedItem> => {
+  const res = await apiClient.post<SavedItem>("/saved-items", payload);
+  return res.data;
+};
+
+export const deleteSavedItem = async (id: number): Promise<void> => {
+  await apiClient.delete(`/saved-items/${id}`);
 };

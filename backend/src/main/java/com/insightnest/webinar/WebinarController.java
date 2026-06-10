@@ -1,6 +1,8 @@
 package com.insightnest.webinar;
 
+import com.insightnest.webinar.dto.WebinarRegistrationResponse;
 import com.insightnest.webinar.dto.WebinarRequest;
+import com.insightnest.webinar.dto.WebinarResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/webinars")
+@RequestMapping("/api/v1/webinars")
 public class WebinarController {
     private final WebinarRepository webinarRepository;
     private final WebinarService webinarService;
@@ -23,32 +25,32 @@ public class WebinarController {
     }
 
     @GetMapping
-    public Page<Webinar> list(
+    public Page<WebinarResponse> list(
             @PageableDefault(size = 20, sort = "scheduledAt", direction = Sort.Direction.ASC) Pageable pageable) {
-        return webinarRepository.findAll(pageable);
+        return webinarRepository.findAll(pageable).map(WebinarResponse::from);
     }
 
     @PostMapping
     @PreAuthorize("hasRole('FACULTY')")
-    public Webinar create(@Valid @RequestBody WebinarRequest request) {
-        return webinarService.create(request);
+    public WebinarResponse create(@Valid @RequestBody WebinarRequest request) {
+        return WebinarResponse.from(webinarService.create(request));
     }
 
     @PostMapping("/{id}/register")
     @PreAuthorize("hasRole('LEARNER')")
-    public WebinarRegistration register(@PathVariable Long id) {
-        return webinarService.register(id);
+    public WebinarRegistrationResponse register(@PathVariable Long id) {
+        return WebinarRegistrationResponse.from(webinarService.register(id));
     }
 
     @PostMapping("/{id}/cancel")
     @PreAuthorize("hasRole('LEARNER')")
-    public WebinarRegistration cancel(@PathVariable Long id) {
-        return webinarService.cancel(id);
+    public WebinarRegistrationResponse cancel(@PathVariable Long id) {
+        return WebinarRegistrationResponse.from(webinarService.cancel(id));
     }
 
     @GetMapping("/registrations/me")
     @PreAuthorize("hasRole('LEARNER')")
-    public List<WebinarRegistration> myRegistrations() {
-        return webinarService.getMyRegistrations();
+    public List<WebinarRegistrationResponse> myRegistrations() {
+        return webinarService.getMyRegistrations().stream().map(WebinarRegistrationResponse::from).toList();
     }
 }

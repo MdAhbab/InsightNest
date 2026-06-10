@@ -12,6 +12,6 @@ public interface ResearchProjectRepository extends JpaRepository<ResearchProject
     List<ResearchProject> findByCreatedBy(User user);
 
     @Override
-    @EntityGraph(attributePaths = "createdBy")
+    @EntityGraph(attributePaths = "createdBy", type = EntityGraph.EntityGraphType.LOAD)
     Page<ResearchProject> findAll(Pageable pageable);
 }

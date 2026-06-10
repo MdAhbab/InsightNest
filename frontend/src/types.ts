@@ -130,3 +130,20 @@ export type ResearchRequest = {
   requester: { id: number; fullName: string };
   createdAt: string;
 };
+
+export type AppNotification = {
+  id: number;
+  title: string;
+  message: string;
+  readAt: string | null;
+  createdAt: string;
+};
+
+export type SavedItemType = "UNIVERSITY" | "PROGRAM" | "SCHOLARSHIP" | "RESEARCH_PROJECT" | "WEBINAR";
+
+export type SavedItem = {
+  id: number;
+  itemType: SavedItemType;
+  itemId: number;
+  createdAt: string;
+};

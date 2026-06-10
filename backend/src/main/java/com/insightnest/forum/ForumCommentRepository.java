@@ -6,6 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface ForumCommentRepository extends JpaRepository<ForumComment, Long> {
-    @EntityGraph(attributePaths = "author")
+    @EntityGraph(attributePaths = "author", type = EntityGraph.EntityGraphType.LOAD)
     List<ForumComment> findByThreadIdOrderByCreatedAtAsc(Long threadId);
 }

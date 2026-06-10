@@ -1,9 +1,11 @@
 package com.insightnest.resource;
 
+import com.insightnest.common.events.AuditEvent;
 import com.insightnest.config.StorageProperties;
 import com.insightnest.exception.ApiException;
 import com.insightnest.user.User;
 import com.insightnest.user.UserService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
@@ -31,13 +33,16 @@ public class LibraryResourceService {
     private final LibraryResourceRepository resourceRepository;
     private final UserService userService;
     private final StorageProperties storageProperties;
+    private final ApplicationEventPublisher eventPublisher;
 
     public LibraryResourceService(LibraryResourceRepository resourceRepository,
                                   UserService userService,
-                                  StorageProperties storageProperties) {
+                                  StorageProperties storageProperties,
+                                  ApplicationEventPublisher eventPublisher) {
         this.resourceRepository = resourceRepository;
         this.userService = userService;
         this.storageProperties = storageProperties;
+        this.eventPublisher = eventPublisher;
     }
 
     public Page<LibraryResource> list(Pageable pageable) {
@@ -77,7 +82,10 @@ public class LibraryResourceService {
             resource.setFileSize(file.getSize());
             resource.setPublicAccess(publicAccess);
             resource.setUploader(user);
-            return resourceRepository.save(resource);
+            LibraryResource saved = resourceRepository.save(resource);
+            eventPublisher.publishEvent(new AuditEvent(user, "RESOURCE_UPLOADED", "Resource",
+                    saved.getId(), originalName));
+            return saved;
         } catch (IOException ex) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "File upload failed");
         }

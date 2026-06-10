@@ -1,11 +1,13 @@
 import { getPrograms } from "../api/catalog";
 import useFetch from "../hooks/useFetch";
 import { Loading, ErrorState, EmptyState } from "../components/AsyncStates";
+import useSavedItems from "../hooks/useSavedItems";
 
 const fmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
 const ProgramsPage = () => {
   const { data, loading, error, retry } = useFetch(getPrograms);
+  const saved = useSavedItems("PROGRAM");
 
   return (
     <div className="page-stack">
@@ -71,6 +73,17 @@ const ProgramsPage = () => {
                     <span className="tag status-muted">No deadline set</span>
                   )}
                   {program.department && <span className="tag status-blue">{program.department}</span>}
+                  {saved.enabled && (
+                    <button
+                      type="button"
+                      className={`save-btn${saved.isSaved(program.id) ? " saved" : ""}`}
+                      disabled={saved.busyId === program.id}
+                      aria-pressed={saved.isSaved(program.id)}
+                      onClick={() => saved.toggle(program.id)}
+                    >
+                      {saved.isSaved(program.id) ? "Saved" : "Save"}
+                    </button>
+                  )}
                 </div>
               </article>
             ))}

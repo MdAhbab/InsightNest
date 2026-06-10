@@ -2,12 +2,14 @@ import { useMemo, useState } from "react";
 import { getUniversities } from "../api/catalog";
 import useFetch from "../hooks/useFetch";
 import { Loading, ErrorState, EmptyState } from "../components/AsyncStates";
+import useSavedItems from "../hooks/useSavedItems";
 
 const fmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
 const UniversitiesPage = () => {
   const { data, loading, error, retry } = useFetch(getUniversities);
   const [activeFilter, setActiveFilter] = useState("All");
+  const saved = useSavedItems("UNIVERSITY");
 
   const cities = useMemo(() => {
     if (!data) return [];
@@ -95,6 +97,17 @@ const UniversitiesPage = () => {
                     <span className="tag status-blue">Rank #{university.ranking}</span>
                   )}
                   <span className="tag status-muted">{fmt.format(new Date(university.createdAt))}</span>
+                  {saved.enabled && (
+                    <button
+                      type="button"
+                      className={`save-btn${saved.isSaved(university.id) ? " saved" : ""}`}
+                      disabled={saved.busyId === university.id}
+                      aria-pressed={saved.isSaved(university.id)}
+                      onClick={() => saved.toggle(university.id)}
+                    >
+                      {saved.isSaved(university.id) ? "Saved" : "Save"}
+                    </button>
+                  )}
                 </div>
               </article>
             ))}

@@ -1,5 +1,7 @@
 package com.insightnest.scholarship;
 
+import com.insightnest.common.events.ApplicationStatusChangedEvent;
+import com.insightnest.common.events.AuditEvent;
 import com.insightnest.exception.ApiException;
 import com.insightnest.scholarship.dto.ScholarshipApplicationRequest;
 import com.insightnest.scholarship.dto.ScholarshipRequest;
@@ -7,6 +9,7 @@ import com.insightnest.scholarship.dto.ScholarshipStatusRequest;
 import com.insightnest.user.Role;
 import com.insightnest.user.User;
 import com.insightnest.user.UserService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -20,26 +23,35 @@ public class ScholarshipService {
     private final ScholarshipRepository scholarshipRepository;
     private final ScholarshipApplicationRepository scholarshipApplicationRepository;
     private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ScholarshipService(ScholarshipRepository scholarshipRepository,
                               ScholarshipApplicationRepository scholarshipApplicationRepository,
-                              UserService userService) {
+                              UserService userService,
+                              ApplicationEventPublisher eventPublisher) {
         this.scholarshipRepository = scholarshipRepository;
         this.scholarshipApplicationRepository = scholarshipApplicationRepository;
         this.userService = userService;
+        this.eventPublisher = eventPublisher;
     }
 
     public Scholarship createScholarship(ScholarshipRequest request) {
         Scholarship scholarship = new Scholarship();
         applyScholarship(scholarship, request);
-        return scholarshipRepository.save(scholarship);
+        Scholarship saved = scholarshipRepository.save(scholarship);
+        eventPublisher.publishEvent(new AuditEvent(userService.getCurrentUser(), "SCHOLARSHIP_CREATED",
+                "Scholarship", saved.getId(), saved.getTitle()));
+        return saved;
     }
 
     public Scholarship updateScholarship(Long id, ScholarshipRequest request) {
         Scholarship scholarship = scholarshipRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Scholarship not found"));
         applyScholarship(scholarship, request);
-        return scholarshipRepository.save(scholarship);
+        Scholarship saved = scholarshipRepository.save(scholarship);
+        eventPublisher.publishEvent(new AuditEvent(userService.getCurrentUser(), "SCHOLARSHIP_UPDATED",
+                "Scholarship", saved.getId(), saved.getTitle()));
+        return saved;
     }
 
     public ScholarshipApplication applyToScholarship(Long scholarshipId, ScholarshipApplicationRequest request) {
@@ -79,7 +91,12 @@ public class ScholarshipService {
         if (request.getNotes() != null) {
             application.setNotes(request.getNotes());
         }
-        return scholarshipApplicationRepository.save(application);
+        ScholarshipApplication saved = scholarshipApplicationRepository.save(application);
+        eventPublisher.publishEvent(new ApplicationStatusChangedEvent(saved.getLearner(),
+                "Scholarship application", saved.getScholarship().getTitle(), saved.getStatus().name()));
+        eventPublisher.publishEvent(new AuditEvent(userService.getCurrentUser(), "SCHOLARSHIP_APPLICATION_REVIEWED",
+                "ScholarshipApplication", saved.getId(), saved.getStatus().name()));
+        return saved;
     }
 
     private void applyScholarship(Scholarship scholarship, ScholarshipRequest request) {

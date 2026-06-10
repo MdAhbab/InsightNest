@@ -2,7 +2,9 @@ package com.insightnest.forum;
 
 import com.insightnest.exception.ApiException;
 import com.insightnest.forum.dto.CommentRequest;
+import com.insightnest.forum.dto.CommentResponse;
 import com.insightnest.forum.dto.ThreadRequest;
+import com.insightnest.forum.dto.ThreadResponse;
 import com.insightnest.user.User;
 import com.insightnest.user.UserService;
 import jakarta.validation.Valid;
@@ -17,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/forums")
+@RequestMapping("/api/v1/forums")
 public class ForumController {
     private final ForumThreadRepository threadRepository;
     private final ForumCommentRepository commentRepository;
@@ -32,36 +34,38 @@ public class ForumController {
     }
 
     @GetMapping("/threads")
-    public Page<ForumThread> listThreads(
+    public Page<ThreadResponse> listThreads(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return threadRepository.findAll(pageable);
+        return threadRepository.findAll(pageable).map(ThreadResponse::from);
     }
 
     @GetMapping("/threads/{id}")
-    public ForumThread getThread(@PathVariable Long id) {
+    public ThreadResponse getThread(@PathVariable Long id) {
         return threadRepository.findById(id)
+                .map(ThreadResponse::from)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Thread not found"));
     }
 
     @PostMapping("/threads")
     @PreAuthorize("hasAnyRole('LEARNER','FACULTY')")
-    public ForumThread createThread(@Valid @RequestBody ThreadRequest request) {
+    public ThreadResponse createThread(@Valid @RequestBody ThreadRequest request) {
         User user = userService.getCurrentUser();
         ForumThread thread = new ForumThread();
         thread.setTitle(request.getTitle());
         thread.setBody(request.getBody());
         thread.setAuthor(user);
-        return threadRepository.save(thread);
+        return ThreadResponse.from(threadRepository.save(thread));
     }
 
     @GetMapping("/threads/{id}/comments")
-    public List<ForumComment> listComments(@PathVariable Long id) {
-        return commentRepository.findByThreadIdOrderByCreatedAtAsc(id);
+    public List<CommentResponse> listComments(@PathVariable Long id) {
+        return commentRepository.findByThreadIdOrderByCreatedAtAsc(id).stream()
+                .map(CommentResponse::from).toList();
     }
 
     @PostMapping("/threads/{id}/comments")
     @PreAuthorize("hasAnyRole('LEARNER','FACULTY')")
-    public ForumComment addComment(@PathVariable Long id, @Valid @RequestBody CommentRequest request) {
+    public CommentResponse addComment(@PathVariable Long id, @Valid @RequestBody CommentRequest request) {
         User user = userService.getCurrentUser();
         ForumThread thread = threadRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Thread not found"));
@@ -69,6 +73,6 @@ public class ForumController {
         comment.setThread(thread);
         comment.setBody(request.getBody());
         comment.setAuthor(user);
-        return commentRepository.save(comment);
+        return CommentResponse.from(commentRepository.save(comment));
     }
 }

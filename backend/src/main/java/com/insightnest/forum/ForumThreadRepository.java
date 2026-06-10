@@ -7,6 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ForumThreadRepository extends JpaRepository<ForumThread, Long> {
     @Override
-    @EntityGraph(attributePaths = "author")
+    @EntityGraph(attributePaths = "author", type = EntityGraph.EntityGraphType.LOAD)
     Page<ForumThread> findAll(Pageable pageable);
 }

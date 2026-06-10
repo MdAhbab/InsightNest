@@ -931,3 +931,29 @@ button:focus-visible {
   color: var(--color-muted);
   margin-top: 4px;
 }
+
+/* Save toggle button — pill styled like .tag */
+.save-btn {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-muted);
+  padding: 0 11px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.save-btn.saved {
+  border-color: #f6df9b;
+  background: #fef7e0;
+  color: #8a5a0a;
+}
+
+.save-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

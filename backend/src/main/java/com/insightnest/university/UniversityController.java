@@ -1,8 +1,12 @@
 package com.insightnest.university;
 
+import com.insightnest.common.events.AuditEvent;
 import com.insightnest.exception.ApiException;
 import com.insightnest.university.dto.UniversityRequest;
+import com.insightnest.university.dto.UniversityResponse;
+import com.insightnest.user.UserService;
 import jakarta.validation.Valid;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -12,41 +16,54 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/universities")
+@RequestMapping("/api/v1/universities")
 public class UniversityController {
     private final UniversityRepository universityRepository;
+    private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public UniversityController(UniversityRepository universityRepository) {
+    public UniversityController(UniversityRepository universityRepository,
+                                UserService userService,
+                                ApplicationEventPublisher eventPublisher) {
         this.universityRepository = universityRepository;
+        this.userService = userService;
+        this.eventPublisher = eventPublisher;
     }
 
     @GetMapping
-    public Page<University> list(
+    public Page<UniversityResponse> list(
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable) {
-        return universityRepository.findAll(pageable);
+        return universityRepository.findAll(pageable).map(UniversityResponse::from);
     }
 
     @GetMapping("/{id}")
-    public University get(@PathVariable Long id) {
+    public UniversityResponse get(@PathVariable Long id) {
         return universityRepository.findById(id)
+                .map(UniversityResponse::from)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "University not found"));
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public University create(@Valid @RequestBody UniversityRequest request) {
+    public UniversityResponse create(@Valid @RequestBody UniversityRequest request) {
         University university = new University();
         applyRequest(university, request);
-        return universityRepository.save(university);
+        University saved = universityRepository.save(university);
+        eventPublisher.publishEvent(new AuditEvent(userService.getCurrentUser(), "UNIVERSITY_CREATED",
+                "University", saved.getId(), saved.getName()));
+        return UniversityResponse.from(saved);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public University update(@PathVariable Long id, @Valid @RequestBody UniversityRequest request) {
+    public UniversityResponse update(@PathVariable Long id, @Valid @RequestBody UniversityRequest request) {
         University university = universityRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "University not found"));
         applyRequest(university, request);
-        return universityRepository.save(university);
+        University saved = universityRepository.save(university);
+        eventPublisher.publishEvent(new AuditEvent(userService.getCurrentUser(), "UNIVERSITY_UPDATED",
+                "University", saved.getId(), saved.getName()));
+        return UniversityResponse.from(saved);
     }
 
     private void applyRequest(University university, UniversityRequest request) {

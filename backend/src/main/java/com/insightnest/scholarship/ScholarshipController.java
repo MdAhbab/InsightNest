@@ -2,7 +2,9 @@ package com.insightnest.scholarship;
 
 import com.insightnest.exception.ApiException;
 import com.insightnest.scholarship.dto.ScholarshipApplicationRequest;
+import com.insightnest.scholarship.dto.ScholarshipApplicationResponse;
 import com.insightnest.scholarship.dto.ScholarshipRequest;
+import com.insightnest.scholarship.dto.ScholarshipResponse;
 import com.insightnest.scholarship.dto.ScholarshipStatusRequest;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -16,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/scholarships")
+@RequestMapping("/api/v1/scholarships")
 public class ScholarshipController {
     private final ScholarshipRepository scholarshipRepository;
     private final ScholarshipService scholarshipService;
@@ -27,51 +29,54 @@ public class ScholarshipController {
     }
 
     @GetMapping
-    public Page<Scholarship> list(
+    public Page<ScholarshipResponse> list(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return scholarshipRepository.findAll(pageable);
+        return scholarshipRepository.findAll(pageable).map(ScholarshipResponse::from);
     }
 
     @GetMapping("/{id}")
-    public Scholarship get(@PathVariable Long id) {
+    public ScholarshipResponse get(@PathVariable Long id) {
         return scholarshipRepository.findById(id)
+                .map(ScholarshipResponse::from)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Scholarship not found"));
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public Scholarship create(@Valid @RequestBody ScholarshipRequest request) {
-        return scholarshipService.createScholarship(request);
+    public ScholarshipResponse create(@Valid @RequestBody ScholarshipRequest request) {
+        return ScholarshipResponse.from(scholarshipService.createScholarship(request));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public Scholarship update(@PathVariable Long id, @Valid @RequestBody ScholarshipRequest request) {
-        return scholarshipService.updateScholarship(id, request);
+    public ScholarshipResponse update(@PathVariable Long id, @Valid @RequestBody ScholarshipRequest request) {
+        return ScholarshipResponse.from(scholarshipService.updateScholarship(id, request));
     }
 
     @PostMapping("/{id}/apply")
     @PreAuthorize("hasRole('LEARNER')")
-    public ScholarshipApplication apply(@PathVariable Long id, @Valid @RequestBody ScholarshipApplicationRequest request) {
-        return scholarshipService.applyToScholarship(id, request);
+    public ScholarshipApplicationResponse apply(@PathVariable Long id,
+                                                @Valid @RequestBody ScholarshipApplicationRequest request) {
+        return ScholarshipApplicationResponse.from(scholarshipService.applyToScholarship(id, request));
     }
 
     @GetMapping("/applications/me")
     @PreAuthorize("hasRole('LEARNER')")
-    public List<ScholarshipApplication> myApplications() {
-        return scholarshipService.getMyApplications();
+    public List<ScholarshipApplicationResponse> myApplications() {
+        return scholarshipService.getMyApplications().stream().map(ScholarshipApplicationResponse::from).toList();
     }
 
     @GetMapping("/applications")
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<ScholarshipApplication> allApplications(
+    public Page<ScholarshipApplicationResponse> allApplications(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return scholarshipService.getAllApplications(pageable);
+        return scholarshipService.getAllApplications(pageable).map(ScholarshipApplicationResponse::from);
     }
 
     @PatchMapping("/applications/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ScholarshipApplication updateStatus(@PathVariable Long id, @Valid @RequestBody ScholarshipStatusRequest request) {
-        return scholarshipService.updateStatus(id, request);
+    public ScholarshipApplicationResponse updateStatus(@PathVariable Long id,
+                                                       @Valid @RequestBody ScholarshipStatusRequest request) {
+        return ScholarshipApplicationResponse.from(scholarshipService.updateStatus(id, request));
     }
 }

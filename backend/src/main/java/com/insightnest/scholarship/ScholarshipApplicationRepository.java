@@ -9,11 +9,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface ScholarshipApplicationRepository extends JpaRepository<ScholarshipApplication, Long> {
-    @EntityGraph(attributePaths = "scholarship")
+    @EntityGraph(attributePaths = "scholarship", type = EntityGraph.EntityGraphType.LOAD)
     List<ScholarshipApplication> findByLearner(User learner);
 
     @Override
-    @EntityGraph(attributePaths = {"scholarship", "learner"})
+    @EntityGraph(attributePaths = {"scholarship", "learner"}, type = EntityGraph.EntityGraphType.LOAD)
     Page<ScholarshipApplication> findAll(Pageable pageable);
 
     boolean existsByScholarshipAndLearner(Scholarship scholarship, User learner);

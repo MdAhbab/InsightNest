@@ -1,6 +1,8 @@
 package com.insightnest.user;
 
+import com.insightnest.common.events.AuditEvent;
 import com.insightnest.exception.ApiException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -11,9 +13,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, ApplicationEventPublisher eventPublisher) {
         this.userRepository = userRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     public User getCurrentUser() {
@@ -32,6 +36,9 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
         user.setSuspended(suspended);
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        eventPublisher.publishEvent(new AuditEvent(getCurrentUser(),
+                suspended ? "USER_SUSPENDED" : "USER_REACTIVATED", "User", saved.getId(), saved.getEmail()));
+        return saved;
     }
 }

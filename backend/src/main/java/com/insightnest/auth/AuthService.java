@@ -4,6 +4,7 @@ import com.insightnest.auth.dto.AuthResponse;
 import com.insightnest.auth.dto.LoginRequest;
 import com.insightnest.auth.dto.RefreshRequest;
 import com.insightnest.auth.dto.RegisterRequest;
+import com.insightnest.common.events.AuditEvent;
 import com.insightnest.config.JwtService;
 import com.insightnest.exception.ApiException;
 import com.insightnest.profile.FacultyProfile;
@@ -16,6 +17,7 @@ import com.insightnest.user.Role;
 import com.insightnest.user.User;
 import com.insightnest.user.UserRepository;
 import com.insightnest.user.dto.UserResponse;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -35,6 +37,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public AuthService(UserRepository userRepository,
                        RefreshTokenRepository refreshTokenRepository,
@@ -42,7 +45,8 @@ public class AuthService {
                        FacultyProfileRepository facultyProfileRepository,
                        PasswordEncoder passwordEncoder,
                        AuthenticationManager authenticationManager,
-                       JwtService jwtService) {
+                       JwtService jwtService,
+                       ApplicationEventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.learnerProfileRepository = learnerProfileRepository;
@@ -50,6 +54,7 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
+        this.eventPublisher = eventPublisher;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -86,6 +91,7 @@ public class AuthService {
             facultyProfileRepository.save(profile);
         }
 
+        eventPublisher.publishEvent(new AuditEvent(saved, "USER_REGISTERED", "User", saved.getId(), role.name()));
         return issueTokens(saved);
     }
 
@@ -95,10 +101,12 @@ public class AuthService {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(email, request.getPassword()));
         } catch (AuthenticationException ex) {
+            eventPublisher.publishEvent(new AuditEvent(null, "LOGIN_FAILED", "User", null, email));
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
+        eventPublisher.publishEvent(new AuditEvent(user, "LOGIN_SUCCESS", "User", user.getId(), null));
         return issueTokens(user);
     }
 

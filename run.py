@@ -46,6 +46,9 @@ TOOLS_DIR = ROOT / ".tools"
 DOWNLOADS_DIR = TOOLS_DIR / "downloads"
 
 JAVA_MAJOR = 17
+# Spring Boot 3.3 and Mockito cannot run on very new JDKs (class-file versions they
+# do not support yet); accept only this range and fall back to a portable JDK 17.
+JAVA_MAJOR_MAX = int(os.environ.get("INSIGHTNEST_JAVA_MAX", "21"))
 NODE_MAJOR = 18
 MAVEN_VERSION = os.environ.get("INSIGHTNEST_MAVEN_VERSION", "3.9.9")
 NODE_VERSION = os.environ.get("INSIGHTNEST_NODE_VERSION", "20.18.1")
@@ -198,7 +201,8 @@ def download_file(url: str, destination: Path) -> None:
         return
 
     log(f"Downloading {url}")
-    with urllib.request.urlopen(url, timeout=120) as response:
+    request = urllib.request.Request(url, headers={"User-Agent": "insightnest-launcher/1.0"})
+    with urllib.request.urlopen(request, timeout=120) as response:
         total = response.headers.get("Content-Length")
         total_bytes = int(total) if total and total.isdigit() else None
         read_bytes = 0
@@ -258,9 +262,14 @@ def ensure_java(env: Dict[str, str]) -> Dict[str, str]:
     if java_cmd:
         output = command_output([java_cmd, "-version"], env)
         major = parse_major_version(output, r'version "([^"]+)"')
-        if major and major >= JAVA_MAJOR:
-            log(f"Java {major}+ available.")
+        if major and JAVA_MAJOR <= major <= JAVA_MAJOR_MAX:
+            log(f"Java {major} available.")
             return env
+        if major and major > JAVA_MAJOR_MAX:
+            log(
+                f"Java {major} found, but the supported range is {JAVA_MAJOR}-{JAVA_MAJOR_MAX} "
+                f"(newer JDKs break Spring Boot and Mockito). Using a portable JDK {JAVA_MAJOR} instead."
+            )
 
     os_name = system_name()
     arch = cpu_arch()
@@ -510,7 +519,7 @@ def main() -> int:
     backend_port = choose_port(args.backend_port)
     frontend_port = choose_port(args.frontend_port)
     env["SERVER_PORT"] = str(backend_port)
-    env["VITE_API_URL"] = f"http://localhost:{backend_port}/api"
+    env["VITE_API_URL"] = f"http://localhost:{backend_port}/api/v1"
 
     ensure_mysql_reachable(env, skip_check=args.skip_db_check)
     maybe_install_dependencies(
