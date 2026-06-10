@@ -1,6 +1,11 @@
 package com.insightnest.research.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public class ResearchProjectRequest {
+    @NotBlank
+    @Size(max = 200)
     private String title;
     private String description;
     private String requiredSkills;

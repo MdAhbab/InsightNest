@@ -1,35 +1,17 @@
-const projects = [
-  {
-    title: "Bangladesh Flood Prediction Lab",
-    owner: "Dr. Farhan Rahman",
-    skills: "Python, ML, GIS",
-    status: "Open",
-    body: "Early warning models using rainfall, river-level, and district vulnerability data.",
-  },
-  {
-    title: "Urban Mobility Study - Dhaka",
-    owner: "Dr. Sabina Yasmin",
-    skills: "Survey design, statistics",
-    status: "Closed",
-    body: "Commuter behavior, route pressure, and public transport demand across Dhaka.",
-  },
-  {
-    title: "Bangla NLP Education Corpus",
-    owner: "Dr. Farhan Rahman",
-    skills: "Bangla NLP, annotation",
-    status: "Archived",
-    body: "Annotated Bangla student counseling text for education support tools.",
-  },
-  {
-    title: "Community Health Heat Index",
-    owner: "Dr. Sabina Yasmin",
-    skills: "Public health, field survey",
-    status: "Open",
-    body: "Mapping heat exposure, health risk, and adaptation behavior in urban wards.",
-  },
-];
+import { getResearchProjects } from "../api/catalog";
+import useFetch from "../hooks/useFetch";
+import { Loading, ErrorState, EmptyState } from "../components/AsyncStates";
+import { ResearchProject } from "../types";
+
+const statusClass = (status: ResearchProject["status"]) => {
+  if (status === "OPEN") return "tag status-open";
+  if (status === "CLOSED") return "tag status-warning";
+  return "tag status-muted";
+};
 
 const ResearchPage = () => {
+  const { data, loading, error, retry } = useFetch(getResearchProjects);
+
   return (
     <div className="page-stack">
       <section className="page-hero">
@@ -40,13 +22,6 @@ const ResearchPage = () => {
             A modern research board should make scope, mentor, status, and required skills obvious before learners
             request to join.
           </p>
-          <div className="filters">
-            <span className="filter-chip active">All projects</span>
-            <span className="filter-chip">Open</span>
-            <span className="filter-chip">Climate</span>
-            <span className="filter-chip">Public health</span>
-            <span className="filter-chip">Bangla NLP</span>
-          </div>
         </div>
         <aside className="insight-panel">
           <span className="tag status-blue">Join request quality</span>
@@ -75,31 +50,31 @@ const ResearchPage = () => {
             <p>Built for fast mentor fit and clear join decisions.</p>
           </div>
         </div>
-        <div className="grid grid-2">
-          {projects.map((project) => (
-            <article className="item-card" key={project.title}>
-              <div className="item-topline">
-                <span>{project.owner}</span>
-                <span
-                  className={
-                    project.status === "Open"
-                      ? "tag status-open"
-                      : project.status === "Closed"
-                        ? "tag status-warning"
-                        : "tag status-muted"
-                  }
-                >
-                  {project.status}
-                </span>
-              </div>
-              <h3>{project.title}</h3>
-              <p>{project.body}</p>
-              <div className="card-footer">
-                <span className="tag status-blue">{project.skills}</span>
-              </div>
-            </article>
-          ))}
-        </div>
+        {loading && <Loading />}
+        {error && <ErrorState message={error} retry={retry} />}
+        {!loading && !error && data?.content.length === 0 && (
+          <EmptyState title="No research projects found." hint="Open projects will appear here as faculty post them." />
+        )}
+        {!loading && !error && data && data.content.length > 0 && (
+          <div className="grid grid-2">
+            {data.content.map((project) => (
+              <article className="item-card" key={project.id}>
+                <div className="item-topline">
+                  <span>{project.createdBy?.fullName ?? "—"}</span>
+                  <span className={statusClass(project.status)}>{project.status}</span>
+                </div>
+                <h3>{project.title}</h3>
+                <p>{project.description}</p>
+                <div className="card-footer">
+                  {project.requiredSkills && (
+                    <span className="tag status-blue">{project.requiredSkills}</span>
+                  )}
+                  {project.tags && <span className="tag status-muted">{project.tags}</span>}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

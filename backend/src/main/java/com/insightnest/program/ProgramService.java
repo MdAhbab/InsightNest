@@ -9,6 +9,8 @@ import com.insightnest.university.UniversityRepository;
 import com.insightnest.user.Role;
 import com.insightnest.user.User;
 import com.insightnest.user.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -78,15 +80,17 @@ public class ProgramService {
         return programApplicationRepository.findByLearner(user);
     }
 
-    public List<ProgramApplication> getAllApplications() {
-        return programApplicationRepository.findAll();
+    public Page<ProgramApplication> getAllApplications(Pageable pageable) {
+        return programApplicationRepository.findAll(pageable);
     }
 
     public ProgramApplication updateApplicationStatus(Long id, ApplicationStatusRequest request) {
         ProgramApplication application = programApplicationRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Application not found"));
         application.setStatus(request.getStatus());
-        application.setNotes(request.getNotes());
+        if (request.getNotes() != null) {
+            application.setNotes(request.getNotes());
+        }
         return programApplicationRepository.save(application);
     }
 

@@ -1,8 +1,10 @@
 package com.insightnest.scholarship.dto;
 
 import com.insightnest.scholarship.ScholarshipApplicationStatus;
+import jakarta.validation.constraints.NotNull;
 
 public class ScholarshipStatusRequest {
+    @NotNull
     private ScholarshipApplicationStatus status;
     private String notes;
 

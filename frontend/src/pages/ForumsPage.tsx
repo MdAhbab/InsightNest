@@ -1,31 +1,12 @@
-const threads = [
-  {
-    title: "Scholarship tips for Bangladesh",
-    topic: "Funding",
-    replies: "18 replies",
-    body: "Students compare verified scholarship sources, document timing, and interview preparation.",
-  },
-  {
-    title: "Choosing CSE programs in Dhaka",
-    topic: "Programs",
-    replies: "12 replies",
-    body: "A practical comparison of labs, faculty, alumni outcomes, and internship access.",
-  },
-  {
-    title: "How to ask faculty for research supervision",
-    topic: "Research",
-    replies: "9 replies",
-    body: "Examples of clear emails, short proposals, and portfolio links that mentors can review quickly.",
-  },
-  {
-    title: "Public university admission document checklist",
-    topic: "Admissions",
-    replies: "22 replies",
-    body: "NID, photos, transcripts, quota certificates, payment slips, and deadline reminders.",
-  },
-];
+import { getForumThreads } from "../api/catalog";
+import useFetch from "../hooks/useFetch";
+import { Loading, ErrorState, EmptyState } from "../components/AsyncStates";
+
+const fmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
 const ForumsPage = () => {
+  const { data, loading, error, retry } = useFetch(getForumThreads);
+
   return (
     <div className="page-stack">
       <section className="page-hero">
@@ -36,13 +17,6 @@ const ForumsPage = () => {
             The forum experience is designed for specific topics, useful replies, and quick scanning instead of noisy
             generic discussion.
           </p>
-          <div className="filters">
-            <span className="filter-chip active">Trending</span>
-            <span className="filter-chip">Scholarships</span>
-            <span className="filter-chip">Programs</span>
-            <span className="filter-chip">Research</span>
-            <span className="filter-chip">Admissions</span>
-          </div>
         </div>
         <aside className="insight-panel">
           <span className="tag status-blue">Posting quality</span>
@@ -71,21 +45,28 @@ const ForumsPage = () => {
             <p>Forum cards emphasize topic, usefulness, and response activity.</p>
           </div>
         </div>
-        <div className="grid grid-2">
-          {threads.map((thread) => (
-            <article className="item-card" key={thread.title}>
-              <div className="item-topline">
-                <span>{thread.topic}</span>
-                <span className="tag status-open">{thread.replies}</span>
-              </div>
-              <h3>{thread.title}</h3>
-              <p>{thread.body}</p>
-              <div className="card-footer">
-                <span className="tag status-muted">Community verified</span>
-              </div>
-            </article>
-          ))}
-        </div>
+        {loading && <Loading />}
+        {error && <ErrorState message={error} retry={retry} />}
+        {!loading && !error && data?.content.length === 0 && (
+          <EmptyState title="No discussions yet." hint="Be the first to start a thread on programs, scholarships, or research." />
+        )}
+        {!loading && !error && data && data.content.length > 0 && (
+          <div className="grid grid-2">
+            {data.content.map((thread) => (
+              <article className="item-card" key={thread.id}>
+                <div className="item-topline">
+                  <span>{thread.author?.fullName ?? "Anonymous"}</span>
+                  <span className="tag status-blue">{fmt.format(new Date(thread.createdAt))}</span>
+                </div>
+                <h3>{thread.title}</h3>
+                <p>{thread.body}</p>
+                <div className="card-footer">
+                  <span className="tag status-muted">Community thread</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

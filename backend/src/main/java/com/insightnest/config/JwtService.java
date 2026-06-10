@@ -19,9 +19,11 @@ import java.util.Map;
 @Service
 public class JwtService {
     private final JwtProperties jwtProperties;
+    private final Key signingKey;
 
     public JwtService(JwtProperties jwtProperties) {
         this.jwtProperties = jwtProperties;
+        this.signingKey = buildSigningKey();
     }
 
     public String generateAccessToken(User user) {
@@ -80,6 +82,10 @@ public class JwtService {
     }
 
     private Key getSigningKey() {
+        return signingKey;
+    }
+
+    private Key buildSigningKey() {
         byte[] keyBytes;
         String secret = jwtProperties.getSecret();
         if (secret.matches("^[A-Za-z0-9+/=]+$") && secret.length() % 4 == 0) {

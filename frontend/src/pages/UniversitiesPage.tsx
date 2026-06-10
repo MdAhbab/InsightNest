@@ -1,55 +1,29 @@
-const universities = [
-  {
-    name: "University of Dhaka",
-    city: "Dhaka",
-    type: "Public",
-    focus: "Business, social science, law, biological science",
-    rank: "#1 public profile",
-    intake: "Spring and annual admissions",
-  },
-  {
-    name: "BUET",
-    city: "Dhaka",
-    type: "Public",
-    focus: "Engineering, architecture, planning, computer science",
-    rank: "Top engineering choice",
-    intake: "Highly competitive annual intake",
-  },
-  {
-    name: "BRAC University",
-    city: "Dhaka",
-    type: "Private",
-    focus: "Public health, CSE, economics, development studies",
-    rank: "Research active",
-    intake: "Multiple intakes",
-  },
-  {
-    name: "North South University",
-    city: "Dhaka",
-    type: "Private",
-    focus: "Business, economics, engineering, life sciences",
-    rank: "Strong private network",
-    intake: "Spring, summer, fall",
-  },
-  {
-    name: "SUST",
-    city: "Sylhet",
-    type: "Public",
-    focus: "Science, technology, data systems, social science",
-    rank: "STEM focused",
-    intake: "Annual admission cycle",
-  },
-  {
-    name: "Rajshahi University",
-    city: "Rajshahi",
-    type: "Public",
-    focus: "Science, humanities, agriculture, business",
-    rank: "Regional leader",
-    intake: "Annual admission cycle",
-  },
-];
+import { useMemo, useState } from "react";
+import { getUniversities } from "../api/catalog";
+import useFetch from "../hooks/useFetch";
+import { Loading, ErrorState, EmptyState } from "../components/AsyncStates";
+
+const fmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
 const UniversitiesPage = () => {
+  const { data, loading, error, retry } = useFetch(getUniversities);
+  const [activeFilter, setActiveFilter] = useState("All");
+
+  const cities = useMemo(() => {
+    if (!data) return [];
+    return Array.from(new Set(data.content.map((u) => u.city))).sort();
+  }, [data]);
+
+  const chips = useMemo(() => ["All", ...cities], [cities]);
+
+  const filtered = useMemo(() => {
+    if (!data) return [];
+    if (activeFilter === "All") return data.content;
+    return data.content.filter((u) => u.city === activeFilter);
+  }, [data, activeFilter]);
+
+  const totalCount = data?.page.totalElements ?? null;
+
   return (
     <div className="page-stack">
       <section className="page-hero">
@@ -61,11 +35,16 @@ const UniversitiesPage = () => {
             application shortlist.
           </p>
           <div className="filters">
-            <span className="filter-chip active">All institutions</span>
-            <span className="filter-chip">Public</span>
-            <span className="filter-chip">Private</span>
-            <span className="filter-chip">Dhaka</span>
-            <span className="filter-chip">STEM</span>
+            {chips.map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                className={`filter-chip${activeFilter === chip ? " active" : ""}`}
+                onClick={() => setActiveFilter(chip)}
+              >
+                {chip}
+              </button>
+            ))}
           </div>
         </div>
         <aside className="insight-panel">
@@ -76,16 +55,12 @@ const UniversitiesPage = () => {
           </p>
           <div className="stats-row">
             <div className="metric">
-              <h3>6</h3>
-              <p>featured institutions</p>
+              <h3>{totalCount !== null ? totalCount : "—"}</h3>
+              <p>institutions</p>
             </div>
             <div className="metric">
-              <h3>4</h3>
+              <h3>{cities.length || "—"}</h3>
               <p>cities covered</p>
-            </div>
-            <div className="metric">
-              <h3>2</h3>
-              <p>ownership types</p>
             </div>
           </div>
         </aside>
@@ -98,22 +73,33 @@ const UniversitiesPage = () => {
             <p>Readable cards with the details applicants need before opening a full profile.</p>
           </div>
         </div>
-        <div className="grid grid-3">
-          {universities.map((university) => (
-            <article className="item-card" key={university.name}>
-              <div className="item-topline">
-                <span>{university.city}</span>
-                <span className="tag status-open">{university.type}</span>
-              </div>
-              <h3>{university.name}</h3>
-              <p>{university.focus}</p>
-              <div className="card-footer">
-                <span className="tag status-muted">{university.rank}</span>
-                <span>{university.intake}</span>
-              </div>
-            </article>
-          ))}
-        </div>
+        {loading && <Loading />}
+        {error && <ErrorState message={error} retry={retry} />}
+        {!loading && !error && filtered.length === 0 && (
+          <EmptyState title="No universities match." hint="Try selecting a different city filter." />
+        )}
+        {!loading && !error && filtered.length > 0 && (
+          <div className="grid grid-3">
+            {filtered.map((university) => (
+              <article className="item-card" key={university.id}>
+                <div className="item-topline">
+                  <span>{university.city}</span>
+                  <span className={university.archived ? "tag status-muted" : "tag status-open"}>
+                    {university.archived ? "Archived" : university.country}
+                  </span>
+                </div>
+                <h3>{university.name}</h3>
+                <p>{university.description}</p>
+                <div className="card-footer">
+                  {university.ranking !== null && (
+                    <span className="tag status-blue">Rank #{university.ranking}</span>
+                  )}
+                  <span className="tag status-muted">{fmt.format(new Date(university.createdAt))}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

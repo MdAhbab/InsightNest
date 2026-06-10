@@ -3,11 +3,12 @@ package com.insightnest.user;
 import com.insightnest.user.dto.UserResponse;
 import com.insightnest.user.dto.UserStatusRequest;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -25,8 +26,9 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public List<UserResponse> getAll() {
-        return userService.getAllUsers().stream().map(this::toResponse).collect(Collectors.toList());
+    public Page<UserResponse> getAll(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return userService.getUsers(pageable).map(this::toResponse);
     }
 
     @PatchMapping("/{id}/status")

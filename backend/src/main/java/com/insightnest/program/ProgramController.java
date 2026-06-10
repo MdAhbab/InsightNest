@@ -4,6 +4,11 @@ import com.insightnest.exception.ApiException;
 import com.insightnest.program.dto.ApplicationStatusRequest;
 import com.insightnest.program.dto.ProgramApplicationRequest;
 import com.insightnest.program.dto.ProgramRequest;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -22,8 +27,9 @@ public class ProgramController {
     }
 
     @GetMapping
-    public List<Program> list() {
-        return programRepository.findAll();
+    public Page<Program> list(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return programRepository.findAll(pageable);
     }
 
     @GetMapping("/{id}")
@@ -34,19 +40,19 @@ public class ProgramController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public Program create(@RequestBody ProgramRequest request) {
+    public Program create(@Valid @RequestBody ProgramRequest request) {
         return programService.createProgram(request);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public Program update(@PathVariable Long id, @RequestBody ProgramRequest request) {
+    public Program update(@PathVariable Long id, @Valid @RequestBody ProgramRequest request) {
         return programService.updateProgram(id, request);
     }
 
     @PostMapping("/{id}/apply")
     @PreAuthorize("hasRole('LEARNER')")
-    public ProgramApplication apply(@PathVariable Long id, @RequestBody ProgramApplicationRequest request) {
+    public ProgramApplication apply(@PathVariable Long id, @Valid @RequestBody ProgramApplicationRequest request) {
         return programService.applyToProgram(id, request);
     }
 
@@ -58,13 +64,14 @@ public class ProgramController {
 
     @GetMapping("/applications")
     @PreAuthorize("hasRole('ADMIN')")
-    public List<ProgramApplication> allApplications() {
-        return programService.getAllApplications();
+    public Page<ProgramApplication> allApplications(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return programService.getAllApplications(pageable);
     }
 
     @PatchMapping("/applications/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ProgramApplication updateStatus(@PathVariable Long id, @RequestBody ApplicationStatusRequest request) {
+    public ProgramApplication updateStatus(@PathVariable Long id, @Valid @RequestBody ApplicationStatusRequest request) {
         return programService.updateApplicationStatus(id, request);
     }
 }

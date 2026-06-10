@@ -1,7 +1,11 @@
 package com.insightnest.program.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class ProgramApplicationRequest {
+    @NotBlank
     private String educationSummary;
+    @NotBlank
     private String statementOfPurpose;
     private String supportingDocumentPath;
     private String notes;

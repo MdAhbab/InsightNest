@@ -1,23 +1,65 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { getWebinars, getUniversities, getScholarships, getResearchProjects } from "../api/catalog";
+import { Webinar } from "../types";
+
+const fmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" });
+
+const focusAreas = [
+  {
+    title: "Program shortlists",
+    body: "Compare departments, deadlines, ranking signals, and fit across Bangladeshi universities.",
+    meta: "New deadlines this week",
+  },
+  {
+    title: "Funding readiness",
+    body: "Keep eligibility, documents, statements, and scholarship status in one review pipeline.",
+    meta: "Active local scholarships",
+  },
+  {
+    title: "Research pathways",
+    body: "Find faculty projects, join requests, datasets, proposal templates, and webinar recordings.",
+    meta: "Open labs accepting learners",
+  },
+];
 
 const HomePage = () => {
-  const focusAreas = [
-    {
-      title: "Program shortlists",
-      body: "Compare departments, deadlines, ranking signals, and fit across Bangladeshi universities.",
-      meta: "6 new deadlines this week",
-    },
-    {
-      title: "Funding readiness",
-      body: "Keep eligibility, documents, statements, and scholarship status in one review pipeline.",
-      meta: "4 active local scholarships",
-    },
-    {
-      title: "Research pathways",
-      body: "Find faculty projects, join requests, datasets, proposal templates, and webinar recordings.",
-      meta: "3 open labs accepting learners",
-    },
-  ];
+  const [webinars, setWebinars] = useState<Webinar[]>([]);
+  const [webinarsLoaded, setWebinarsLoaded] = useState(false);
+  const [uniCount, setUniCount] = useState<number | null>(null);
+  const [scholCount, setScholCount] = useState<number | null>(null);
+  const [researchCount, setResearchCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    getWebinars(0, 20)
+      .then((page) => {
+        const scheduled = page.content
+          .filter((w) => w.status === "SCHEDULED")
+          .sort((a, b) => {
+            if (!a.scheduledAt) return 1;
+            if (!b.scheduledAt) return -1;
+            return new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime();
+          })
+          .slice(0, 3);
+        setWebinars(scheduled);
+        setWebinarsLoaded(true);
+      })
+      .catch(() => {
+        setWebinarsLoaded(true);
+      });
+
+    getUniversities(0, 1)
+      .then((p) => setUniCount(p.page.totalElements))
+      .catch(() => setUniCount(null));
+
+    getScholarships(0, 1)
+      .then((p) => setScholCount(p.page.totalElements))
+      .catch(() => setScholCount(null));
+
+    getResearchProjects(0, 1)
+      .then((p) => setResearchCount(p.page.totalElements))
+      .catch(() => setResearchCount(null));
+  }, []);
 
   return (
     <div className="page-stack">
@@ -39,16 +81,16 @@ const HomePage = () => {
           </div>
           <div className="hero-metrics">
             <div>
-              <h3>42</h3>
+              <h3>{uniCount !== null ? uniCount : "—"}</h3>
               <p>Bangladesh institutions tracked</p>
             </div>
             <div>
-              <h3>18</h3>
+              <h3>{scholCount !== null ? scholCount : "—"}</h3>
               <p>Scholarship routes mapped</p>
             </div>
             <div>
-              <h3>9</h3>
-              <p>Faculty research groups open</p>
+              <h3>{researchCount !== null ? researchCount : "—"}</h3>
+              <p>Faculty research projects</p>
             </div>
           </div>
         </div>
@@ -61,31 +103,29 @@ const HomePage = () => {
           <div className="hero-card">
             <div className="item-topline">
               <span>Upcoming webinars</span>
-              <span className="tag status-blue">May 2026</span>
+              <span className="tag status-blue">Scheduled</span>
             </div>
-            <ul>
-              <li>
-                <div>
-                  <strong>Funding Pathways for Bangladesh</strong>
-                  <span>Scholarships, bank foundations, and UGC routes</span>
-                </div>
-                <span>May 17</span>
-              </li>
-              <li>
-                <div>
-                  <strong>Research Proposal Clinic</strong>
-                  <span>How to shape a faculty-ready project pitch</span>
-                </div>
-                <span>May 25</span>
-              </li>
-              <li>
-                <div>
-                  <strong>Public University Admission Q&A</strong>
-                  <span>Document prep and program comparison</span>
-                </div>
-                <span>Jun 02</span>
-              </li>
-            </ul>
+            {!webinarsLoaded && (
+              <p style={{ color: "var(--color-muted)", fontSize: "13px" }}>Loading…</p>
+            )}
+            {webinarsLoaded && webinars.length === 0 && (
+              <p style={{ color: "var(--color-muted)", fontSize: "13px" }}>No upcoming webinars.</p>
+            )}
+            {webinarsLoaded && webinars.length > 0 && (
+              <ul>
+                {webinars.map((w) => (
+                  <li key={w.id}>
+                    <div>
+                      <strong>{w.title}</strong>
+                      <span>{w.description}</span>
+                    </div>
+                    <span>
+                      {w.scheduledAt ? fmt.format(new Date(w.scheduledAt)) : "TBA"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
             <Link to="/webinars" className="btn btn-primary">
               View all webinars
             </Link>

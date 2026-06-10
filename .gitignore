@@ -1,15 +1,42 @@
-# Backend
-/backend/target
+# ---- Backend (Spring Boot / Maven) ----
+/backend/target/
 /backend/.env
+/backend/*.log
+/backend/.mvn/wrapper/maven-wrapper.jar
+hs_err_pid*
+replay_pid*
 
-# Frontend
-/frontend/node_modules
-/frontend/dist
+# ---- Frontend (React / Vite / Node) ----
+/frontend/node_modules/
+/frontend/dist/
 /frontend/.env
+/frontend/.env.local
+/frontend/*.tsbuildinfo
+/frontend/vite.config.js
+/frontend/vite.config.d.ts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Storage
-/storage
+# ---- Local tooling and launcher ----
+/.tools/
+/.tmp/
+__pycache__/
+*.py[cod]
 
-# IDE
+# ---- Uploaded files ----
+/storage/
+
+# ---- IDE / OS ----
 .DS_Store
+Thumbs.db
 .vscode/
+.idea/
+*.iml
+
+# ---- Database ----
+# Seed data, SQL dumps, and schema files stay tracked on purpose.
+# Do NOT add seed/ or *.sql to this file.
+!seed/
+!seed/**

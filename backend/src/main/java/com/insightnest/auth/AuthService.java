@@ -114,9 +114,14 @@ public class AuthService {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
         }
 
+        User user = stored.getUser();
+        if (!user.isEnabled() || user.isSuspended()) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Account is disabled");
+        }
+
         stored.setRevoked(true);
         refreshTokenRepository.save(stored);
-        return issueTokens(stored.getUser());
+        return issueTokens(user);
     }
 
     public void logout(RefreshRequest request) {

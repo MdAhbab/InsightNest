@@ -1,5 +1,6 @@
 package com.insightnest.resource;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.insightnest.common.BaseEntity;
 import com.insightnest.user.User;
 import jakarta.persistence.Column;
@@ -48,6 +49,7 @@ public class LibraryResource extends BaseEntity {
         this.fileName = fileName;
     }
 
+    @JsonIgnore
     public String getFilePath() {
         return filePath;
     }

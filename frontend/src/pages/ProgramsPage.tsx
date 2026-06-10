@@ -1,55 +1,12 @@
-const programs = [
-  {
-    name: "BSc in Computer Science and Engineering",
-    university: "BUET",
-    level: "Undergraduate",
-    deadline: "45 days left",
-    detail: "Systems, AI, software engineering, and competitive programming pathways.",
-    status: "Deadline soon",
-  },
-  {
-    name: "MSc in Data Science",
-    university: "BRAC University",
-    level: "Graduate",
-    deadline: "75 days left",
-    detail: "Applied analytics, local datasets, machine learning, and capstone research.",
-    status: "Open",
-  },
-  {
-    name: "MBA in Finance",
-    university: "University of Dhaka",
-    level: "Graduate",
-    deadline: "60 days left",
-    detail: "Banking, capital markets, financial modeling, and Bangladesh market cases.",
-    status: "Open",
-  },
-  {
-    name: "BBA in Marketing",
-    university: "North South University",
-    level: "Undergraduate",
-    deadline: "90 days left",
-    detail: "Consumer insight, brand strategy, digital commerce, and campaign analytics.",
-    status: "Open",
-  },
-  {
-    name: "MPH in Public Health",
-    university: "BRAC University",
-    level: "Graduate",
-    deadline: "105 days left",
-    detail: "Urban health, nutrition, epidemiology, and climate adaptation research.",
-    status: "Review fit",
-  },
-  {
-    name: "BSc in Civil Engineering",
-    university: "SUST",
-    level: "Undergraduate",
-    deadline: "Archived",
-    detail: "Transport, water resources, materials, and resilient infrastructure.",
-    status: "Archived",
-  },
-];
+import { getPrograms } from "../api/catalog";
+import useFetch from "../hooks/useFetch";
+import { Loading, ErrorState, EmptyState } from "../components/AsyncStates";
+
+const fmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
 const ProgramsPage = () => {
+  const { data, loading, error, retry } = useFetch(getPrograms);
+
   return (
     <div className="page-stack">
       <section className="page-hero">
@@ -60,13 +17,6 @@ const ProgramsPage = () => {
             Programs are organized around decisions: level, institution, deadline, academic focus, and the next
             document you should prepare.
           </p>
-          <div className="filters">
-            <span className="filter-chip active">All programs</span>
-            <span className="filter-chip">Undergraduate</span>
-            <span className="filter-chip">Graduate</span>
-            <span className="filter-chip">STEM</span>
-            <span className="filter-chip">Business</span>
-          </div>
         </div>
         <aside className="insight-panel">
           <span className="tag status-warning">Application queue</span>
@@ -95,26 +45,37 @@ const ProgramsPage = () => {
             <p>Every card gives a compact, comparable view instead of burying the decision points.</p>
           </div>
         </div>
-        <div className="grid grid-3">
-          {programs.map((program) => (
-            <article className="item-card" key={program.name}>
-              <div className="item-topline">
-                <span>{program.university}</span>
-                <span className={program.status === "Archived" ? "tag status-muted" : "tag status-open"}>
-                  {program.level}
-                </span>
-              </div>
-              <h3>{program.name}</h3>
-              <p>{program.detail}</p>
-              <div className="card-footer">
-                <span className={program.status === "Deadline soon" ? "tag status-warning" : "tag status-blue"}>
-                  {program.status}
-                </span>
-                <span>{program.deadline}</span>
-              </div>
-            </article>
-          ))}
-        </div>
+        {loading && <Loading />}
+        {error && <ErrorState message={error} retry={retry} />}
+        {!loading && !error && data?.content.length === 0 && (
+          <EmptyState title="No programs found." hint="Check back soon as new programs are added regularly." />
+        )}
+        {!loading && !error && data && data.content.length > 0 && (
+          <div className="grid grid-3">
+            {data.content.map((program) => (
+              <article className="item-card" key={program.id}>
+                <div className="item-topline">
+                  <span>{program.university?.name ?? "—"}</span>
+                  <span className={program.archived ? "tag status-muted" : "tag status-open"}>
+                    {program.archived ? "Archived" : program.type}
+                  </span>
+                </div>
+                <h3>{program.name}</h3>
+                <p>{program.description}</p>
+                <div className="card-footer">
+                  {program.applicationDeadline ? (
+                    <span className="tag status-warning">
+                      Deadline: {fmt.format(new Date(program.applicationDeadline))}
+                    </span>
+                  ) : (
+                    <span className="tag status-muted">No deadline set</span>
+                  )}
+                  {program.department && <span className="tag status-blue">{program.department}</span>}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

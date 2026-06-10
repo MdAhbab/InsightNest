@@ -1,42 +1,12 @@
-const scholarships = [
-  {
-    title: "Bangladesh Government Merit Scholarship",
-    coverage: "Tuition waiver + stipend",
-    deadline: "30 days left",
-    eligibility: "Bangladeshi citizenship, strong academic result, institutional nomination.",
-    status: "Open",
-  },
-  {
-    title: "Prime Bank Foundation Scholarship",
-    coverage: "Undergraduate support",
-    deadline: "40 days left",
-    eligibility: "Financial need, academic excellence, proof of enrollment.",
-    status: "Open",
-  },
-  {
-    title: "ICT Division Innovation Scholarship",
-    coverage: "Project funding",
-    deadline: "50 days left",
-    eligibility: "STEM learner with a technology proposal relevant to Bangladesh.",
-    status: "Proposal needed",
-  },
-  {
-    title: "Dutch-Bangla Bank Scholarship",
-    coverage: "Education support",
-    deadline: "65 days left",
-    eligibility: "SSC/HSC performance, income statement, admission confirmation.",
-    status: "Open",
-  },
-  {
-    title: "UGC Research Grant",
-    coverage: "Faculty-led grant",
-    deadline: "Archived",
-    eligibility: "Research plan, faculty supervisor, and institutional approval.",
-    status: "Archived",
-  },
-];
+import { getScholarships } from "../api/catalog";
+import useFetch from "../hooks/useFetch";
+import { Loading, ErrorState, EmptyState } from "../components/AsyncStates";
+
+const fmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
 const ScholarshipsPage = () => {
+  const { data, loading, error, retry } = useFetch(getScholarships);
+
   return (
     <div className="page-stack">
       <section className="page-hero">
@@ -47,13 +17,6 @@ const ScholarshipsPage = () => {
             Funding cards highlight coverage, eligibility, deadline pressure, and whether a proposal or financial
             verification is likely to be needed.
           </p>
-          <div className="filters">
-            <span className="filter-chip active">All funding</span>
-            <span className="filter-chip">Merit</span>
-            <span className="filter-chip">Need-based</span>
-            <span className="filter-chip">Research</span>
-            <span className="filter-chip">STEM</span>
-          </div>
         </div>
         <aside className="insight-panel">
           <span className="tag status-open">Document checklist</span>
@@ -82,23 +45,36 @@ const ScholarshipsPage = () => {
             <p>Designed for fast scanning, comparison, and application readiness.</p>
           </div>
         </div>
-        <div className="grid grid-3">
-          {scholarships.map((scholarship) => (
-            <article className="item-card" key={scholarship.title}>
-              <div className="item-topline">
-                <span>{scholarship.coverage}</span>
-                <span className={scholarship.status === "Archived" ? "tag status-muted" : "tag status-open"}>
-                  {scholarship.status}
-                </span>
-              </div>
-              <h3>{scholarship.title}</h3>
-              <p>{scholarship.eligibility}</p>
-              <div className="card-footer">
-                <span className="tag status-warning">{scholarship.deadline}</span>
-              </div>
-            </article>
-          ))}
-        </div>
+        {loading && <Loading />}
+        {error && <ErrorState message={error} retry={retry} />}
+        {!loading && !error && data?.content.length === 0 && (
+          <EmptyState title="No scholarships found." hint="New funding opportunities are added as they become available." />
+        )}
+        {!loading && !error && data && data.content.length > 0 && (
+          <div className="grid grid-3">
+            {data.content.map((scholarship) => (
+              <article className="item-card" key={scholarship.id}>
+                <div className="item-topline">
+                  <span className="tag status-muted">Scholarship</span>
+                  <span className={scholarship.archived ? "tag status-muted" : "tag status-open"}>
+                    {scholarship.archived ? "Archived" : "Open"}
+                  </span>
+                </div>
+                <h3>{scholarship.title}</h3>
+                <p>{scholarship.eligibility || scholarship.description}</p>
+                <div className="card-footer">
+                  {scholarship.deadline ? (
+                    <span className="tag status-warning">
+                      Deadline: {fmt.format(new Date(scholarship.deadline))}
+                    </span>
+                  ) : (
+                    <span className="tag status-muted">No deadline set</span>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

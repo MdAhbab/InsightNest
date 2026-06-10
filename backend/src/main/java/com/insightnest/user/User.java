@@ -1,5 +1,6 @@
 package com.insightnest.user;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.insightnest.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -19,6 +20,10 @@ import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "users")
+// Entities are serialized when embedded in API responses (authors, hosts, applicants);
+// only id, fullName and roles may ever reach a client.
+@JsonIgnoreProperties({"password", "email", "username", "authorities", "enabled", "enabledFlag",
+        "suspended", "accountNonExpired", "accountNonLocked", "credentialsNonExpired"})
 public class User extends BaseEntity implements UserDetails {
     @Column(nullable = false)
     private String fullName;

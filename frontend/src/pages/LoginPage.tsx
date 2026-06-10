@@ -1,24 +1,31 @@
 import { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const LoginPage = () => {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
+    setSubmitting(true);
     try {
       await login(email, password);
+      navigate("/dashboard");
     } catch (err) {
       if (axios.isAxiosError<{ message?: string }>(err)) {
         setError(err.response?.data?.message ?? "Login failed. Check your credentials.");
       } else {
         setError("Login failed. Check your credentials.");
       }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -41,8 +48,8 @@ const LoginPage = () => {
           Password
           <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" required />
         </label>
-        <button type="submit" className="btn btn-primary">
-          Log in
+        <button type="submit" className="btn btn-primary" disabled={submitting}>
+          {submitting ? "Logging in…" : "Log in"}
         </button>
       </form>
     </div>

@@ -1,12 +1,12 @@
 package com.insightnest.user;
 
 import com.insightnest.exception.ApiException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class UserService {
@@ -24,8 +24,8 @@ public class UserService {
         return (User) authentication.getPrincipal();
     }
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public Page<User> getUsers(Pageable pageable) {
+        return userRepository.findAll(pageable);
     }
 
     public User updateSuspended(Long id, boolean suspended) {

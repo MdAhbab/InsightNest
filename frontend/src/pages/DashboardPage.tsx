@@ -1,13 +1,114 @@
+import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import {
+  getMyProgramApplications,
+  getMyScholarshipApplications,
+  getMyWebinarRegistrations,
+  getMyResearchRequests,
+  getUsersPage,
+  getContactPage,
+} from "../api/catalog";
+import {
+  ProgramApplication,
+  ScholarshipApplication,
+  WebinarRegistration,
+  ResearchRequest,
+} from "../types";
+
+const fmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
+
+const appStatusClass = (status: ProgramApplication["status"] | ScholarshipApplication["status"]) => {
+  if (status === "APPROVED") return "tag status-open";
+  if (status === "REJECTED") return "tag status-warning";
+  if (status === "NEEDS_INFO") return "tag status-warning";
+  return "tag status-blue";
+};
+
+const reqStatusClass = (status: ResearchRequest["status"]) => {
+  if (status === "APPROVED") return "tag status-open";
+  if (status === "REJECTED") return "tag status-warning";
+  return "tag status-blue";
+};
+
+type LearnerData = {
+  programApps: ProgramApplication[];
+  scholarshipApps: ScholarshipApplication[];
+  webinarRegs: WebinarRegistration[];
+  errors: string[];
+};
+
+type FacultyData = {
+  researchRequests: ResearchRequest[];
+  errors: string[];
+};
+
+type AdminData = {
+  userCount: number | null;
+  contactCount: number | null;
+  errors: string[];
+};
 
 const DashboardPage = () => {
   const { user } = useAuth();
   const initials = user?.fullName
-    .split(" ")
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
+    ? user.fullName
+        .split(" ")
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase()
+    : "?";
+
+  const isAdmin = user?.roles.includes("ADMIN") ?? false;
+  const isFaculty = user?.roles.includes("FACULTY") ?? false;
+  const isLearner = user?.roles.includes("LEARNER") ?? false;
+
+  const [loading, setLoading] = useState(true);
+  const [learner, setLearner] = useState<LearnerData | null>(null);
+  const [faculty, setFaculty] = useState<FacultyData | null>(null);
+  const [admin, setAdmin] = useState<AdminData | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+
+    if (isAdmin) {
+      Promise.allSettled([getUsersPage(), getContactPage()]).then(([usersResult, contactResult]) => {
+        const errors: string[] = [];
+        const userCount = usersResult.status === "fulfilled" ? usersResult.value.page.totalElements : null;
+        const contactCount = contactResult.status === "fulfilled" ? contactResult.value.page.totalElements : null;
+        if (usersResult.status === "rejected") errors.push("Could not load user count.");
+        if (contactResult.status === "rejected") errors.push("Could not load contact count.");
+        setAdmin({ userCount, contactCount, errors });
+        setLoading(false);
+      });
+    } else if (isFaculty) {
+      Promise.allSettled([getMyResearchRequests()]).then(([reqResult]) => {
+        const errors: string[] = [];
+        const researchRequests = reqResult.status === "fulfilled" ? reqResult.value : [];
+        if (reqResult.status === "rejected") errors.push("Could not load research requests.");
+        setFaculty({ researchRequests, errors });
+        setLoading(false);
+      });
+    } else if (isLearner) {
+      Promise.allSettled([
+        getMyProgramApplications(),
+        getMyScholarshipApplications(),
+        getMyWebinarRegistrations(),
+      ]).then(([progResult, scholResult, webResult]) => {
+        const errors: string[] = [];
+        const programApps = progResult.status === "fulfilled" ? progResult.value : [];
+        const scholarshipApps = scholResult.status === "fulfilled" ? scholResult.value : [];
+        const webinarRegs = webResult.status === "fulfilled" ? webResult.value : [];
+        if (progResult.status === "rejected") errors.push("Could not load program applications.");
+        if (scholResult.status === "rejected") errors.push("Could not load scholarship applications.");
+        if (webResult.status === "rejected") errors.push("Could not load webinar registrations.");
+        setLearner({ programApps, scholarshipApps, webinarRegs, errors });
+        setLoading(false);
+      });
+    } else {
+      setLoading(false);
+    }
+  }, [user, isAdmin, isFaculty, isLearner]);
 
   return (
     <div className="page-stack">
@@ -42,38 +143,148 @@ const DashboardPage = () => {
             </div>
           </aside>
 
-          <div className="grid grid-3">
-            <article className="dashboard-card">
-              <span className="tag status-warning">2 need attention</span>
-              <h3>Applications</h3>
-              <p>Track program and scholarship submissions with visible next steps.</p>
-            </article>
-            <article className="dashboard-card">
-              <span className="tag status-open">3 open projects</span>
-              <h3>Research</h3>
-              <p>Monitor join requests, mentor responses, and project updates.</p>
-            </article>
-            <article className="dashboard-card">
-              <span className="tag status-blue">1 upcoming</span>
-              <h3>Webinars</h3>
-              <p>See upcoming sessions, registrations, and recordings.</p>
-            </article>
-            <article className="dashboard-card">
-              <span className="tag status-open">6 saved</span>
-              <h3>Resources</h3>
-              <p>Return to checklists, proposal templates, and dataset guides.</p>
-            </article>
-            <article className="dashboard-card">
-              <span className="tag status-muted">12 replies</span>
-              <h3>Forum activity</h3>
-              <p>Follow answers on programs, scholarships, and research preparation.</p>
-            </article>
-            <article className="dashboard-card">
-              <span className="tag status-warning">4 deadlines</span>
-              <h3>Calendar</h3>
-              <p>Stay ahead of application, interview, and document upload dates.</p>
-            </article>
-          </div>
+          {loading ? (
+            <div className="section-card">
+              <div className="async-loading" role="status" aria-label="Loading dashboard data">
+                <span className="async-spinner" aria-hidden="true" />
+                <span className="async-loading-text">Loading your data…</span>
+              </div>
+            </div>
+          ) : (
+            <div>
+              {learner && (
+                <div className="grid grid-3">
+                  {learner.errors.map((e) => (
+                    <p key={e} className="dashboard-note">{e}</p>
+                  ))}
+                  <article className="dashboard-card">
+                    <span className={`tag ${learner.programApps.length > 0 ? "status-warning" : "status-muted"}`}>
+                      {learner.programApps.length} application{learner.programApps.length !== 1 ? "s" : ""}
+                    </span>
+                    <h3>Program applications</h3>
+                    {learner.programApps.length === 0 ? (
+                      <p>No program applications yet.</p>
+                    ) : (
+                      <ul className="dashboard-sub-list">
+                        {learner.programApps.slice(0, 3).map((a) => (
+                          <li key={a.id} className="dashboard-sub-item">
+                            <span>{a.program.name}</span>
+                            <span className={appStatusClass(a.status)}>{a.status}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </article>
+
+                  <article className="dashboard-card">
+                    <span className={`tag ${learner.scholarshipApps.length > 0 ? "status-warning" : "status-muted"}`}>
+                      {learner.scholarshipApps.length} application{learner.scholarshipApps.length !== 1 ? "s" : ""}
+                    </span>
+                    <h3>Scholarship applications</h3>
+                    {learner.scholarshipApps.length === 0 ? (
+                      <p>No scholarship applications yet.</p>
+                    ) : (
+                      <ul className="dashboard-sub-list">
+                        {learner.scholarshipApps.slice(0, 3).map((a) => (
+                          <li key={a.id} className="dashboard-sub-item">
+                            <span>{a.scholarship.title}</span>
+                            <span className={appStatusClass(a.status)}>{a.status}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </article>
+
+                  <article className="dashboard-card">
+                    <span className={`tag ${learner.webinarRegs.filter((r) => r.status === "REGISTERED").length > 0 ? "status-blue" : "status-muted"}`}>
+                      {learner.webinarRegs.filter((r) => r.status === "REGISTERED").length} registered
+                    </span>
+                    <h3>Webinar registrations</h3>
+                    {learner.webinarRegs.length === 0 ? (
+                      <p>No webinar registrations yet.</p>
+                    ) : (
+                      <ul className="dashboard-sub-list">
+                        {learner.webinarRegs.slice(0, 3).map((r) => (
+                          <li key={r.id} className="dashboard-sub-item">
+                            <span>{r.webinar.title}</span>
+                            <span className={r.status === "REGISTERED" ? "tag status-open" : "tag status-muted"}>
+                              {r.status}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </article>
+                </div>
+              )}
+
+              {faculty && (
+                <div className="grid grid-3">
+                  {faculty.errors.map((e) => (
+                    <p key={e} className="dashboard-note">{e}</p>
+                  ))}
+                  <article className="dashboard-card">
+                    <span className={`tag ${faculty.researchRequests.filter((r) => r.status === "PENDING").length > 0 ? "status-warning" : "status-muted"}`}>
+                      {faculty.researchRequests.filter((r) => r.status === "PENDING").length} pending
+                    </span>
+                    <h3>Research requests</h3>
+                    {faculty.researchRequests.length === 0 ? (
+                      <p>No research join requests yet.</p>
+                    ) : (
+                      <ul className="dashboard-sub-list">
+                        {faculty.researchRequests.slice(0, 3).map((r) => (
+                          <li key={r.id} className="dashboard-sub-item">
+                            <span>{r.requester.fullName} — {r.project.title}</span>
+                            <span className={reqStatusClass(r.status)}>{r.status}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </article>
+                  <article className="dashboard-card">
+                    <span className="tag status-blue">
+                      {fmt.format(new Date())}
+                    </span>
+                    <h3>Activity</h3>
+                    <p>Manage your research projects and respond to pending join requests.</p>
+                  </article>
+                </div>
+              )}
+
+              {admin && (
+                <div className="grid grid-3">
+                  {admin.errors.map((e) => (
+                    <p key={e} className="dashboard-note">{e}</p>
+                  ))}
+                  <article className="dashboard-card">
+                    <span className="tag status-blue">Platform</span>
+                    <h3>Total users</h3>
+                    <p style={{ fontSize: "32px", fontWeight: 800, color: "var(--color-primary-dark)" }}>
+                      {admin.userCount !== null ? admin.userCount : "—"}
+                    </p>
+                  </article>
+                  <article className="dashboard-card">
+                    <span className="tag status-warning">Support</span>
+                    <h3>Contact requests</h3>
+                    <p style={{ fontSize: "32px", fontWeight: 800, color: "var(--color-primary-dark)" }}>
+                      {admin.contactCount !== null ? admin.contactCount : "—"}
+                    </p>
+                  </article>
+                  <article className="dashboard-card">
+                    <span className="tag status-open">Admin</span>
+                    <h3>Platform management</h3>
+                    <p>Manage users, programs, scholarships, and contact requests from the admin panel.</p>
+                  </article>
+                </div>
+              )}
+
+              {!isLearner && !isFaculty && !isAdmin && (
+                <div className="section-card">
+                  <p>No role-specific dashboard available. Please contact support.</p>
+                </div>
+              )}
+            </div>
+          )}
         </section>
       ) : (
         <section className="section-card">

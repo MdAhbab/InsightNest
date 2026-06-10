@@ -1,6 +1,9 @@
 package com.insightnest.research.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class ResearchJoinRequestDto {
+    @NotBlank
     private String message;
     private String skills;
 

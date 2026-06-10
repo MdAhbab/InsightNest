@@ -1,7 +1,11 @@
 package com.insightnest.faq.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class FaqRequest {
+    @NotBlank
     private String question;
+    @NotBlank
     private String answer;
     private boolean active;
 

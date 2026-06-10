@@ -1,27 +1,12 @@
-const faqs = [
-  {
-    question: "How do I apply for a program?",
-    answer: "Create a learner profile, complete your education details, shortlist a program, and apply from the program page.",
-  },
-  {
-    question: "Can I submit multiple scholarship applications?",
-    answer: "Yes. You can submit multiple applications as long as each eligibility requirement is met.",
-  },
-  {
-    question: "Can faculty create webinars?",
-    answer: "Yes. Faculty profiles can schedule webinars and manage registrations from their dashboard.",
-  },
-  {
-    question: "How are applications reviewed?",
-    answer: "Admins review submissions and update statuses to pending, approved, rejected, or needs info.",
-  },
-  {
-    question: "Are Bangladeshi scholarships included?",
-    answer: "Yes. The platform focuses on Bangladesh-relevant government, foundation, bank, ICT, and research funding routes.",
-  },
-];
+import { getFaqs } from "../api/catalog";
+import useFetch from "../hooks/useFetch";
+import { Loading, ErrorState, EmptyState } from "../components/AsyncStates";
 
 const FaqPage = () => {
+  const { data, loading, error, retry } = useFetch(getFaqs);
+
+  const activeFaqs = data ? data.filter((f) => f.active) : [];
+
   return (
     <div className="page-stack">
       <section className="page-hero">
@@ -49,14 +34,21 @@ const FaqPage = () => {
             <p>Clear answers, separated enough to scan without feeling like a wall of text.</p>
           </div>
         </div>
-        <div className="faq-list">
-          {faqs.map((faq) => (
-            <article className="faq-item" key={faq.question}>
-              <h4>{faq.question}</h4>
-              <p>{faq.answer}</p>
-            </article>
-          ))}
-        </div>
+        {loading && <Loading />}
+        {error && <ErrorState message={error} retry={retry} />}
+        {!loading && !error && activeFaqs.length === 0 && (
+          <EmptyState title="No FAQs available." hint="Check back soon or send us a question via Contact." />
+        )}
+        {!loading && !error && activeFaqs.length > 0 && (
+          <div className="faq-list">
+            {activeFaqs.map((faq) => (
+              <article className="faq-item" key={faq.id}>
+                <h4>{faq.question}</h4>
+                <p>{faq.answer}</p>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

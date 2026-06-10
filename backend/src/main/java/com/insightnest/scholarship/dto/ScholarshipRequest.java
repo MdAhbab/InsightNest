@@ -1,8 +1,13 @@
 package com.insightnest.scholarship.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 import java.time.LocalDate;
 
 public class ScholarshipRequest {
+    @NotBlank
+    @Size(max = 200)
     private String title;
     private String description;
     private String eligibility;

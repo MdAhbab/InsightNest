@@ -1,6 +1,9 @@
 package com.insightnest.scholarship.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class ScholarshipApplicationRequest {
+    @NotBlank
     private String personalStatement;
     private String notes;
 

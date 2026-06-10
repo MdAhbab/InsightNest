@@ -1,6 +1,11 @@
 package com.insightnest.webinar;
 
 import com.insightnest.webinar.dto.WebinarRequest;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,13 +23,14 @@ public class WebinarController {
     }
 
     @GetMapping
-    public List<Webinar> list() {
-        return webinarRepository.findAll();
+    public Page<Webinar> list(
+            @PageableDefault(size = 20, sort = "scheduledAt", direction = Sort.Direction.ASC) Pageable pageable) {
+        return webinarRepository.findAll(pageable);
     }
 
     @PostMapping
     @PreAuthorize("hasRole('FACULTY')")
-    public Webinar create(@RequestBody WebinarRequest request) {
+    public Webinar create(@Valid @RequestBody WebinarRequest request) {
         return webinarService.create(request);
     }
 

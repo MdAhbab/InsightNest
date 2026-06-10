@@ -7,6 +7,8 @@ import com.insightnest.scholarship.dto.ScholarshipStatusRequest;
 import com.insightnest.user.Role;
 import com.insightnest.user.User;
 import com.insightnest.user.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -66,15 +68,17 @@ public class ScholarshipService {
         return scholarshipApplicationRepository.findByLearner(user);
     }
 
-    public List<ScholarshipApplication> getAllApplications() {
-        return scholarshipApplicationRepository.findAll();
+    public Page<ScholarshipApplication> getAllApplications(Pageable pageable) {
+        return scholarshipApplicationRepository.findAll(pageable);
     }
 
     public ScholarshipApplication updateStatus(Long id, ScholarshipStatusRequest request) {
         ScholarshipApplication application = scholarshipApplicationRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Application not found"));
         application.setStatus(request.getStatus());
-        application.setNotes(request.getNotes());
+        if (request.getNotes() != null) {
+            application.setNotes(request.getNotes());
+        }
         return scholarshipApplicationRepository.save(application);
     }
 

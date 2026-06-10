@@ -1,6 +1,9 @@
 package com.insightnest.forum.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class CommentRequest {
+    @NotBlank
     private String body;
 
     public String getBody() {

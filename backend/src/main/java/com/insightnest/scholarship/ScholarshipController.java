@@ -4,6 +4,11 @@ import com.insightnest.exception.ApiException;
 import com.insightnest.scholarship.dto.ScholarshipApplicationRequest;
 import com.insightnest.scholarship.dto.ScholarshipRequest;
 import com.insightnest.scholarship.dto.ScholarshipStatusRequest;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -22,8 +27,9 @@ public class ScholarshipController {
     }
 
     @GetMapping
-    public List<Scholarship> list() {
-        return scholarshipRepository.findAll();
+    public Page<Scholarship> list(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return scholarshipRepository.findAll(pageable);
     }
 
     @GetMapping("/{id}")
@@ -34,19 +40,19 @@ public class ScholarshipController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public Scholarship create(@RequestBody ScholarshipRequest request) {
+    public Scholarship create(@Valid @RequestBody ScholarshipRequest request) {
         return scholarshipService.createScholarship(request);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public Scholarship update(@PathVariable Long id, @RequestBody ScholarshipRequest request) {
+    public Scholarship update(@PathVariable Long id, @Valid @RequestBody ScholarshipRequest request) {
         return scholarshipService.updateScholarship(id, request);
     }
 
     @PostMapping("/{id}/apply")
     @PreAuthorize("hasRole('LEARNER')")
-    public ScholarshipApplication apply(@PathVariable Long id, @RequestBody ScholarshipApplicationRequest request) {
+    public ScholarshipApplication apply(@PathVariable Long id, @Valid @RequestBody ScholarshipApplicationRequest request) {
         return scholarshipService.applyToScholarship(id, request);
     }
 
@@ -58,13 +64,14 @@ public class ScholarshipController {
 
     @GetMapping("/applications")
     @PreAuthorize("hasRole('ADMIN')")
-    public List<ScholarshipApplication> allApplications() {
-        return scholarshipService.getAllApplications();
+    public Page<ScholarshipApplication> allApplications(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return scholarshipService.getAllApplications(pageable);
     }
 
     @PatchMapping("/applications/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ScholarshipApplication updateStatus(@PathVariable Long id, @RequestBody ScholarshipStatusRequest request) {
+    public ScholarshipApplication updateStatus(@PathVariable Long id, @Valid @RequestBody ScholarshipStatusRequest request) {
         return scholarshipService.updateStatus(id, request);
     }
 }

@@ -1,17 +1,20 @@
 :root {
-  --color-ink: #18211f;
-  --color-muted: #68726f;
-  --color-line: #dfe6e2;
-  --color-page: #f6f8f5;
+  /* InsightNest palette (Project_details.md §3.1)
+     Deep Blue #2B3A67 · Soft White #F9FAFB · Vibrant Green #3CB371 · Golden Yellow #F9A825
+     Steel Grey #6C757D · Crisp Red #E13946 · Cool Cyan #00BFFF */
+  --color-ink: #232b3e;
+  --color-muted: #6c757d;
+  --color-line: #e1e5ee;
+  --color-page: #f9fafb;
   --color-surface: #ffffff;
-  --color-surface-soft: #eef4ef;
-  --color-primary: #0f6b5f;
-  --color-primary-dark: #08493f;
-  --color-accent: #d99a19;
-  --color-coral: #c6513d;
-  --color-blue: #2f74b5;
-  --color-green: #2f8a56;
-  --color-danger: #c4352b;
+  --color-surface-soft: #eef1f8;
+  --color-primary: #2b3a67;
+  --color-primary-dark: #1f2b4f;
+  --color-accent: #f9a825;
+  --color-blue: #086b95;
+  --color-cyan: #00bfff;
+  --color-green: #3cb371;
+  --color-danger: #e13946;
 
   --font-body: "Inter", "Segoe UI", sans-serif;
   --font-heading: "Inter", "Segoe UI", sans-serif;
@@ -20,6 +23,6 @@
   --radius-md: 8px;
   --radius-sm: 6px;
 
-  --shadow-soft: 0 16px 40px rgba(24, 33, 31, 0.08);
-  --shadow-card: 0 8px 24px rgba(24, 33, 31, 0.07);
+  --shadow-soft: 0 16px 40px rgba(35, 43, 62, 0.08);
+  --shadow-card: 0 8px 24px rgba(35, 43, 62, 0.07);
 }

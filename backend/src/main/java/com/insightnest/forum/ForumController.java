@@ -5,6 +5,11 @@ import com.insightnest.forum.dto.CommentRequest;
 import com.insightnest.forum.dto.ThreadRequest;
 import com.insightnest.user.User;
 import com.insightnest.user.UserService;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -27,8 +32,9 @@ public class ForumController {
     }
 
     @GetMapping("/threads")
-    public List<ForumThread> listThreads() {
-        return threadRepository.findAll();
+    public Page<ForumThread> listThreads(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return threadRepository.findAll(pageable);
     }
 
     @GetMapping("/threads/{id}")
@@ -39,7 +45,7 @@ public class ForumController {
 
     @PostMapping("/threads")
     @PreAuthorize("hasAnyRole('LEARNER','FACULTY')")
-    public ForumThread createThread(@RequestBody ThreadRequest request) {
+    public ForumThread createThread(@Valid @RequestBody ThreadRequest request) {
         User user = userService.getCurrentUser();
         ForumThread thread = new ForumThread();
         thread.setTitle(request.getTitle());
@@ -50,12 +56,12 @@ public class ForumController {
 
     @GetMapping("/threads/{id}/comments")
     public List<ForumComment> listComments(@PathVariable Long id) {
-        return commentRepository.findByThreadId(id);
+        return commentRepository.findByThreadIdOrderByCreatedAtAsc(id);
     }
 
     @PostMapping("/threads/{id}/comments")
     @PreAuthorize("hasAnyRole('LEARNER','FACULTY')")
-    public ForumComment addComment(@PathVariable Long id, @RequestBody CommentRequest request) {
+    public ForumComment addComment(@PathVariable Long id, @Valid @RequestBody CommentRequest request) {
         User user = userService.getCurrentUser();
         ForumThread thread = threadRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Thread not found"));

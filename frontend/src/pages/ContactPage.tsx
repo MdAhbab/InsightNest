@@ -1,4 +1,39 @@
+import { useState } from "react";
+import { submitContact } from "../api/catalog";
+import axios from "axios";
+
 const ContactPage = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    setSuccess(false);
+    try {
+      await submitContact({ name, email, subject, message });
+      setSuccess(true);
+      setName("");
+      setEmail("");
+      setSubject("");
+      setMessage("");
+    } catch (err) {
+      if (axios.isAxiosError<{ message?: string }>(err)) {
+        setError(err.response?.data?.message ?? "Failed to send message. Please try again.");
+      } else {
+        setError("Failed to send message. Please try again.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="page-stack">
       <section className="page-hero">
@@ -46,31 +81,59 @@ const ContactPage = () => {
             </li>
           </ul>
         </aside>
-        <form className="section-card contact-form">
+        <form className="section-card contact-form" onSubmit={handleSubmit}>
           <div className="section-heading">
             <div>
               <h2>Send a message</h2>
               <p>Keep it specific and the support path gets much faster.</p>
             </div>
           </div>
+          {success && (
+            <span className="success-text">Message sent! We will get back to you within 48 hours.</span>
+          )}
+          {error && <span className="error-text">{error}</span>}
           <label>
             Name
-            <input type="text" placeholder="Your name" required />
+            <input
+              type="text"
+              placeholder="Your name"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </label>
           <label>
             Email
-            <input type="email" placeholder="you@example.com" required />
+            <input
+              type="email"
+              placeholder="you@example.com"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </label>
           <label>
             Subject
-            <input type="text" placeholder="Scholarship inquiry" required />
+            <input
+              type="text"
+              placeholder="Scholarship inquiry"
+              required
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+            />
           </label>
           <label>
             Message
-            <textarea rows={5} placeholder="Write your message" required></textarea>
+            <textarea
+              rows={5}
+              placeholder="Write your message"
+              required
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+            ></textarea>
           </label>
-          <button type="submit" className="btn btn-primary">
-            Send message
+          <button type="submit" className="btn btn-primary" disabled={submitting}>
+            {submitting ? "Sending…" : "Send message"}
           </button>
         </form>
       </section>

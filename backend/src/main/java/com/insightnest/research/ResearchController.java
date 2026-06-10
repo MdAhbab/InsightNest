@@ -5,6 +5,11 @@ import com.insightnest.research.dto.ResearchJoinRequestDto;
 import com.insightnest.research.dto.ResearchJoinStatusRequest;
 import com.insightnest.research.dto.ResearchProjectRequest;
 import com.insightnest.research.dto.ResearchProjectStatusRequest;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -23,8 +28,9 @@ public class ResearchController {
     }
 
     @GetMapping("/projects")
-    public List<ResearchProject> listProjects() {
-        return projectRepository.findAll();
+    public Page<ResearchProject> listProjects(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return projectRepository.findAll(pageable);
     }
 
     @GetMapping("/projects/{id}")
@@ -35,19 +41,20 @@ public class ResearchController {
 
     @PostMapping("/projects")
     @PreAuthorize("hasAnyRole('LEARNER','FACULTY')")
-    public ResearchProject createProject(@RequestBody ResearchProjectRequest request) {
+    public ResearchProject createProject(@Valid @RequestBody ResearchProjectRequest request) {
         return researchService.createProject(request);
     }
 
     @PatchMapping("/projects/{id}/status")
     @PreAuthorize("hasAnyRole('LEARNER','FACULTY')")
-    public ResearchProject updateProjectStatus(@PathVariable Long id, @RequestBody ResearchProjectStatusRequest request) {
+    public ResearchProject updateProjectStatus(@PathVariable Long id,
+                                               @Valid @RequestBody ResearchProjectStatusRequest request) {
         return researchService.updateStatus(id, request);
     }
 
     @PostMapping("/projects/{id}/join")
     @PreAuthorize("hasRole('LEARNER')")
-    public ResearchJoinRequest requestToJoin(@PathVariable Long id, @RequestBody ResearchJoinRequestDto request) {
+    public ResearchJoinRequest requestToJoin(@PathVariable Long id, @Valid @RequestBody ResearchJoinRequestDto request) {
         return researchService.requestToJoin(id, request);
     }
 
@@ -59,7 +66,8 @@ public class ResearchController {
 
     @PatchMapping("/requests/{id}")
     @PreAuthorize("hasAnyRole('LEARNER','FACULTY')")
-    public ResearchJoinRequest updateJoinRequest(@PathVariable Long id, @RequestBody ResearchJoinStatusRequest request) {
+    public ResearchJoinRequest updateJoinRequest(@PathVariable Long id,
+                                                 @Valid @RequestBody ResearchJoinStatusRequest request) {
         return researchService.updateJoinRequest(id, request);
     }
 }

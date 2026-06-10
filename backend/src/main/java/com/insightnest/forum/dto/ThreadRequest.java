@@ -1,7 +1,13 @@
 package com.insightnest.forum.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public class ThreadRequest {
+    @NotBlank
+    @Size(max = 200)
     private String title;
+    @NotBlank
     private String body;
 
     public String getTitle() {

@@ -1,6 +1,11 @@
 package com.insightnest.university.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public class UniversityRequest {
+    @NotBlank
+    @Size(max = 255)
     private String name;
     private String country;
     private String city;

@@ -1,8 +1,10 @@
 package com.insightnest.program.dto;
 
 import com.insightnest.program.ProgramApplicationStatus;
+import jakarta.validation.constraints.NotNull;
 
 public class ApplicationStatusRequest {
+    @NotNull
     private ProgramApplicationStatus status;
     private String notes;
 
