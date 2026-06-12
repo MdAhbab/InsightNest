@@ -12,7 +12,35 @@ public class UniversityRequest {
     private Integer ranking;
     private String website;
     private String description;
+    private Integer foundedYear;
+    private Integer studentCount;
+    // comma-separated string; API also accepts as array via the service mapping
+    private String tags;
     private boolean archived;
+
+    public Integer getFoundedYear() {
+        return foundedYear;
+    }
+
+    public void setFoundedYear(Integer foundedYear) {
+        this.foundedYear = foundedYear;
+    }
+
+    public Integer getStudentCount() {
+        return studentCount;
+    }
+
+    public void setStudentCount(Integer studentCount) {
+        this.studentCount = studentCount;
+    }
+
+    public String getTags() {
+        return tags;
+    }
+
+    public void setTags(String tags) {
+        this.tags = tags;
+    }
 
     public String getName() {
         return name;

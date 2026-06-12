@@ -3,6 +3,7 @@ package com.insightnest.notification;
 import com.insightnest.common.events.ApplicationStatusChangedEvent;
 import com.insightnest.common.events.JoinRequestReviewedEvent;
 import com.insightnest.common.events.JoinRequestSubmittedEvent;
+import com.insightnest.common.events.NewMessageEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -35,5 +36,11 @@ public class NotificationEventListener {
         String status = event.status().toLowerCase(Locale.ROOT);
         notificationService.notify(event.requester(), "Join request " + status,
                 "Your request to join \"" + event.projectTitle() + "\" was " + status + ".");
+    }
+
+    @EventListener
+    public void onNewMessage(NewMessageEvent event) {
+        notificationService.notify(event.recipient(), "New message from " + event.senderName(),
+                "Re: \"" + event.subject() + "\" — " + event.preview());
     }
 }

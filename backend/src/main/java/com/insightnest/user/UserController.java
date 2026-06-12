@@ -1,5 +1,12 @@
 package com.insightnest.user;
 
+import com.insightnest.exception.ApiException;
+import com.insightnest.profile.FacultyProfile;
+import com.insightnest.profile.FacultyProfileRepository;
+import com.insightnest.profile.LearnerProfile;
+import com.insightnest.profile.LearnerProfileRepository;
+import com.insightnest.user.dto.PasswordChangeRequest;
+import com.insightnest.user.dto.PublicUserResponse;
 import com.insightnest.user.dto.UserResponse;
 import com.insightnest.user.dto.UserStatusRequest;
 import jakarta.validation.Valid;
@@ -7,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,9 +22,18 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/users")
 public class UserController {
     private final UserService userService;
+    private final UserRepository userRepository;
+    private final LearnerProfileRepository learnerProfileRepository;
+    private final FacultyProfileRepository facultyProfileRepository;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService,
+                          UserRepository userRepository,
+                          LearnerProfileRepository learnerProfileRepository,
+                          FacultyProfileRepository facultyProfileRepository) {
         this.userService = userService;
+        this.userRepository = userRepository;
+        this.learnerProfileRepository = learnerProfileRepository;
+        this.facultyProfileRepository = facultyProfileRepository;
     }
 
     @GetMapping("/me")
@@ -35,6 +52,23 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public UserResponse updateStatus(@PathVariable Long id, @Valid @RequestBody UserStatusRequest request) {
         return toResponse(userService.updateSuspended(id, request.getSuspended()));
+    }
+
+    @PostMapping("/me/password")
+    public void changePassword(@Valid @RequestBody PasswordChangeRequest request) {
+        userService.changePassword(request.getCurrentPassword(), request.getNewPassword());
+    }
+
+    @GetMapping("/{id}/public")
+    public PublicUserResponse getPublicProfile(@PathVariable Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
+        if (!user.isEnabled() || user.isSuspended()) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "User not found");
+        }
+        LearnerProfile learnerProfile = learnerProfileRepository.findByUser(user).orElse(null);
+        FacultyProfile facultyProfile = facultyProfileRepository.findByUser(user).orElse(null);
+        return PublicUserResponse.from(user, learnerProfile, facultyProfile);
     }
 
     private UserResponse toResponse(User user) {

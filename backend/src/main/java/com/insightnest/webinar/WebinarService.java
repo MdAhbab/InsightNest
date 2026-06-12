@@ -26,14 +26,19 @@ public class WebinarService {
 
     public Webinar create(WebinarRequest request) {
         User user = userService.getCurrentUser();
-        if (!user.getRoles().contains(Role.FACULTY)) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "Only faculty can create webinars");
+        boolean canCreate = user.getRoles().contains(Role.FACULTY)
+                || user.getRoles().contains(Role.ADMIN)
+                || user.getRoles().contains(Role.UNIVERSITY_REP);
+        if (!canCreate) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Only faculty, admin, or university reps can create webinars");
         }
         Webinar webinar = new Webinar();
         webinar.setTitle(request.getTitle());
         webinar.setDescription(request.getDescription());
         webinar.setScheduledAt(request.getScheduledAt());
         webinar.setMeetingLink(request.getMeetingLink());
+        webinar.setDurationMinutes(request.getDurationMinutes());
+        webinar.setSpeakerAffiliation(request.getSpeakerAffiliation());
         webinar.setHost(user);
         return webinarRepository.save(webinar);
     }

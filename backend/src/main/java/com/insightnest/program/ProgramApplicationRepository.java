@@ -17,4 +17,5 @@ public interface ProgramApplicationRepository extends JpaRepository<ProgramAppli
     Page<ProgramApplication> findAll(Pageable pageable);
 
     boolean existsByProgramAndLearner(Program program, User learner);
+    long countByStatus(ProgramApplicationStatus status);
 }

@@ -16,6 +16,8 @@ public class ForumThread extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String body;
 
+    private String category;
+
     @ManyToOne
     private User author;
 
@@ -33,6 +35,14 @@ public class ForumThread extends BaseEntity {
 
     public void setBody(String body) {
         this.body = body;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 
     public User getAuthor() {

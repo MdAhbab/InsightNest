@@ -14,7 +14,8 @@ WHERE email IN (
     'rafiul.islam@insightnest.com',
     'tanjila.akter@insightnest.com',
     'farhan.rahman@insightnest.com',
-    'sabina.yasmin@insightnest.com'
+    'sabina.yasmin@insightnest.com',
+    'rep.demo@insightnest.com'
 );
 
 INSERT IGNORE INTO user_roles (user_id, roles)
@@ -38,3 +39,8 @@ WHERE email IN (
     'farhan.rahman@insightnest.com',
     'sabina.yasmin@insightnest.com'
 );
+
+INSERT IGNORE INTO user_roles (user_id, roles)
+SELECT id, 'UNIVERSITY_REP'
+FROM users
+WHERE email = 'rep.demo@insightnest.com';

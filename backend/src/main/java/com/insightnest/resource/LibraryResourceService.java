@@ -49,7 +49,9 @@ public class LibraryResourceService {
         return resourceRepository.findAll(pageable);
     }
 
-    public LibraryResource upload(String title, String description, boolean publicAccess, MultipartFile file) {
+    public LibraryResource upload(String title, String description, boolean publicAccess,
+                                  String author, Integer year, Integer pages, String field,
+                                  MultipartFile file) {
         User user = userService.getCurrentUser();
         if (file == null || file.isEmpty()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "File is required");
@@ -81,6 +83,13 @@ public class LibraryResourceService {
             resource.setFilePath(destination.toString());
             resource.setFileSize(file.getSize());
             resource.setPublicAccess(publicAccess);
+            resource.setAuthor(author);
+            resource.setYear(year);
+            resource.setPages(pages);
+            resource.setField(field);
+            // Derive resourceType from extension when not explicitly provided
+            String derivedType = deriveResourceType(extension);
+            resource.setResourceType(derivedType);
             resource.setUploader(user);
             LibraryResource saved = resourceRepository.save(resource);
             eventPublisher.publishEvent(new AuditEvent(user, "RESOURCE_UPLOADED", "Resource",
@@ -113,6 +122,16 @@ public class LibraryResourceService {
         } catch (Exception ex) {
             throw new ApiException(HttpStatus.NOT_FOUND, "File not found");
         }
+    }
+
+    private String deriveResourceType(String extension) {
+        if (extension == null) return "PDF";
+        return switch (extension.toLowerCase(Locale.ROOT)) {
+            case "pdf" -> "PDF";
+            case "ppt", "pptx" -> "VIDEO";
+            case "doc", "docx" -> "PAPER";
+            default -> "PDF";
+        };
     }
 
     private boolean isAuthenticated() {

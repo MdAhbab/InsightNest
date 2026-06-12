@@ -36,14 +36,17 @@ public class ForumController {
     @GetMapping("/threads")
     public Page<ThreadResponse> listThreads(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return threadRepository.findAll(pageable).map(ThreadResponse::from);
+        return threadRepository.findAll(pageable).map(t ->
+                ThreadResponse.from(t, commentRepository.countByThreadId(t.getId()),
+                        commentRepository.findLastReplyAt(t.getId())));
     }
 
     @GetMapping("/threads/{id}")
     public ThreadResponse getThread(@PathVariable Long id) {
-        return threadRepository.findById(id)
-                .map(ThreadResponse::from)
+        ForumThread thread = threadRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Thread not found"));
+        return ThreadResponse.from(thread, commentRepository.countByThreadId(id),
+                commentRepository.findLastReplyAt(id));
     }
 
     @PostMapping("/threads")
@@ -53,6 +56,7 @@ public class ForumController {
         ForumThread thread = new ForumThread();
         thread.setTitle(request.getTitle());
         thread.setBody(request.getBody());
+        thread.setCategory(request.getCategory());
         thread.setAuthor(user);
         return ThreadResponse.from(threadRepository.save(thread));
     }

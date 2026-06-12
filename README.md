@@ -1,23 +1,26 @@
 # InsightNest
 
-InsightNest is an academic opportunity platform for learners, faculty, and admins: university and program discovery, program and scholarship applications, research collaboration, a resource library, community forums, webinars, saved items, and in-app notifications.
+InsightNest is an academic opportunity platform for learners, faculty, university representatives, and admins: university and program discovery, program and scholarship applications, research collaboration, a resource library, community forums, webinars, saved items, in-app notifications, private messaging, and four AI advisory features.
 
 ## Architecture
 
 | Layer | Stack |
 | --- | --- |
-| Frontend | React 18 + TypeScript + Vite, React Router, Axios |
+| Frontend | React 18 + TypeScript + Vite 6, Tailwind CSS v4, Radix UI, GSAP/Motion + Three.js, fetch-based API client |
 | Backend | Spring Boot 3 (Java 17), Spring Security (JWT), Spring Data JPA |
 | Database | MySQL 8 |
 | File storage | Local `storage/` directory (configurable via `STORAGE_PATH`) |
 
 Repository layout:
 
-- [backend/](backend/) — Spring Boot API (`com.insightnest.*` feature modules: auth, user, profile, university, program, scholarship, research, resource, forum, webinar, contact, faq, notification, audit, saved, admin)
-- [frontend/](frontend/) — React UI (pages, shared components, API client, auth context)
+- [backend/](backend/) — Spring Boot API (`com.insightnest.*` feature modules: auth, user, profile, university, program, scholarship, research, resource, forum, webinar, contact, faq, notification, audit, saved, admin, **messaging**, **agent**)
+- [frontend/](frontend/) — React UI (editorial redesign; hash-routed pages, shared components, typed API client, auth/session context)
 - [seed/](seed/) — MySQL seed data (tracked in git on purpose; do not gitignore)
 - [run.py](run.py) — one-command local launcher
+- [agents.md](agents.md) — the four Gemma-pluggable agent features and their tool contracts
 - [Project_details.md](Project_details.md) — full product specification
+
+Roles: `LEARNER`, `FACULTY`, `UNIVERSITY_REP`, `ADMIN`. The frontend presents these as Learner, Faculty, Rep, and Admin, each with its own portal (dashboard, researcher console, rep console, admin CMS).
 
 Cross-cutting concerns are decoupled through in-process domain events (Spring `ApplicationEventPublisher`): services publish events such as application-status changes, join-request activity, logins, and admin actions; the notification and audit modules consume them via `@EventListener`. Swapping the in-process bus for an external broker later requires changing only the publish/listen edges, not the domain services.
 
@@ -47,9 +50,26 @@ Run the unit tests with `mvn test` (auth rules, JWT issuing/validation, applicat
 
 ### Feature endpoints beyond the basics
 
-- `GET/PATCH/POST /api/v1/notifications`, `/{id}/read`, `/read-all` — per-user notifications, emitted on application reviews and research join-request activity.
-- `GET/POST/DELETE /api/v1/saved-items` — save universities, programs, scholarships, research projects, or webinars.
-- `GET /api/v1/admin/audit-logs` (admin) — audit trail of logins, registrations, admin CRUD, application reviews, and uploads.
+- `GET/PATCH/POST /api/v1/notifications`, `/{id}/read`, `/read-all` — per-user notifications, emitted on application reviews, research join-request activity, and new messages.
+- `GET/POST/DELETE /api/v1/saved-items` — save universities, programs, scholarships, research projects, webinars, or resources.
+- `POST /api/v1/programs/applications/{id}/withdraw`, `POST /api/v1/scholarships/applications/{id}/withdraw` — applicant withdraws a pending application.
+- `GET /api/v1/admin/stats` (admin) — dashboard counts (users, catalogue sizes, pending applications/join-requests, new contact messages).
+- `GET /api/v1/admin/audit-logs` (admin) — audit trail of logins, registrations, admin CRUD, application reviews, uploads, and agent runs.
+- `POST /api/v1/users/me/password` — change password (revokes refresh tokens). `GET /api/v1/users/{id}/public` — public profile.
+
+### Messaging
+
+- `GET /api/v1/messages` — my conversations (unread counts, last preview). `POST /api/v1/messages` `{recipientId|recipientEmail, subject, body}` opens a conversation.
+- `GET /api/v1/messages/{id}` returns the thread (marks incoming read); `POST /api/v1/messages/{id}/reply` `{body}`. Participants only; a new message notifies the other party.
+
+### AI features (Gemma-pluggable agents)
+
+Four advisory features run on a deterministic heuristic over live data by default, and switch to **Gemma 4** when `GEMMA_BASE_URL`/`GEMMA_MODEL` are configured (see [agents.md](agents.md)). All are authenticated and audit-logged as `AGENT_RUN`.
+
+- `POST /api/v1/agent/counsellor` `{message, history?}` — study-path advice with program/scholarship citations.
+- `GET /api/v1/agent/matchmaker` (learner) — open research projects ranked against the learner profile with a score and rationale.
+- `POST /api/v1/agent/librarian` `{question}` — semantic Q&A over the resource library with citations.
+- `GET /api/v1/agent/digest` — personalised deadline bulletin (saved items, registrations, soonest catalogue deadlines).
 
 ## Frontend setup
 
@@ -58,14 +78,17 @@ Run the unit tests with `mvn test` (auth rules, JWT issuing/validation, applicat
 
 ```bash
 npm install
-npm run dev
+npm run dev        # Vite dev server on http://localhost:5173
+npm run build      # type-checks (tsc --noEmit) then builds for production
+npm run typecheck  # type-check only
+npm run preview    # preview the production build
 ```
 
-The app runs on `http://localhost:5173`. Routes are code-split (lazy-loaded) and all data pages load live API data with explicit loading, error, and empty states. Expired access tokens are refreshed automatically once before redirecting to login. Logged-in users can save items from the directory pages and see notifications plus saved-item summaries on the dashboard.
+Every data view loads live API data with explicit loading, error (with retry), and empty states. Auth uses JWT access + rotating refresh tokens, refreshed automatically once on a `401` before redirecting to login. Role determines the landing portal: learners → dashboard, faculty → researcher console, reps → rep console, admins → CMS. Logged-in users can save items, message faculty/admissions, apply to programmes/scholarships/research, register for webinars, and use the four AI features.
 
-### Theme
+### Theme & design
 
-The UI follows the palette defined in [Project_details.md](Project_details.md): Deep Blue `#2B3A67` (navigation, primary actions), Soft White `#F9FAFB` (backgrounds), Vibrant Green `#3CB371` (success states), Golden Yellow `#F9A825` (highlights), Steel Grey `#6C757D` (secondary text), Crisp Red `#E13946` (errors), Cool Cyan `#00BFFF` (focus states). Tokens live in [frontend/src/styles/theme.css](frontend/src/styles/theme.css).
+The frontend is an editorial redesign with two hand-built themes — **Manuscript** (warm-paper light) and **Observatory** (near-black dark) — toggled in the navigation and persisted to `localStorage` (defaults to the system preference). Motion uses GSAP/Motion scroll choreography with Three.js accent scenes; design tokens live in [frontend/src/styles/](frontend/src/styles/). The classic palette from [Project_details.md](Project_details.md) remains the product's reference brand.
 
 ## One-command local run
 
@@ -88,6 +111,7 @@ After importing [seed/insightnest_seed.sql](seed/insightnest_seed.sql), use thes
 | Learner | `rafiul.islam@insightnest.com` | `Admin@123` |
 | Faculty | `farhan.rahman@insightnest.com` | `Admin@123` |
 | Faculty | `sabina.yasmin@insightnest.com` | `Admin@123` |
+| Rep | `rep.demo@insightnest.com` | `Admin@123` |
 
 If login returns `500`, restart the backend and confirm `JWT_SECRET` is at least 32 characters. If the seeded emails exist but credentials fail, re-run [seed/reset_demo_passwords.sql](seed/reset_demo_passwords.sql) to reset demo passwords back to `Admin@123`.
 
@@ -95,5 +119,7 @@ If login returns `500`, restart the backend and confirm `JWT_SECRET` is at least
 
 - One-time admin setup is available at `POST /api/v1/admin/bootstrap` when `BOOTSTRAP_SECRET` is configured and no admin user exists.
 - Suspended or disabled accounts cannot log in, refresh tokens, or use existing access tokens.
-- Bangladesh-focused sample data lives in [seed/insightnest_seed.sql](seed/insightnest_seed.sql), covering users, universities, programs, scholarships, applications, research, resources, forums, webinars, contacts, and FAQs.
+- Sample data in [seed/insightnest_seed.sql](seed/insightnest_seed.sql) covers users, an international catalogue of universities, programs, scholarships, research projects, resources, forums, and webinars, plus applications, contacts, and FAQs.
+- The AI features default to a deterministic heuristic over live data; set `GEMMA_BASE_URL` (default `http://localhost:11434/v1`, Ollama-compatible) and `GEMMA_MODEL` to route them through Gemma 4. See [agents.md](agents.md).
+- A few prototype-only controls (third-party connections, 2FA/passkeys, data export, account deletion, admin media delete, faculty exam-template builder) are intentionally device-local and labelled as such in the UI.
 - File uploads are stored locally in `storage/` by default (gitignored).

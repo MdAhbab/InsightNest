@@ -84,6 +84,27 @@ public class ScholarshipService {
         return scholarshipApplicationRepository.findAll(pageable);
     }
 
+    public ScholarshipApplication withdrawApplication(Long id) {
+        User user = userService.getCurrentUser();
+        ScholarshipApplication application = scholarshipApplicationRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Application not found"));
+        if (!application.getLearner().getId().equals(user.getId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "You can only withdraw your own application");
+        }
+        if (application.getStatus() != ScholarshipApplicationStatus.PENDING
+                && application.getStatus() != ScholarshipApplicationStatus.NEEDS_INFO) {
+            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "Can only withdraw applications in PENDING or NEEDS_INFO status");
+        }
+        application.setStatus(ScholarshipApplicationStatus.WITHDRAWN);
+        ScholarshipApplication saved = scholarshipApplicationRepository.save(application);
+        eventPublisher.publishEvent(new ApplicationStatusChangedEvent(saved.getLearner(),
+                "Scholarship application", saved.getScholarship().getTitle(), saved.getStatus().name()));
+        eventPublisher.publishEvent(new AuditEvent(user, "SCHOLARSHIP_APPLICATION_WITHDRAWN",
+                "ScholarshipApplication", saved.getId(), saved.getScholarship().getTitle()));
+        return saved;
+    }
+
     public ScholarshipApplication updateStatus(Long id, ScholarshipStatusRequest request) {
         ScholarshipApplication application = scholarshipApplicationRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Application not found"));
@@ -104,6 +125,11 @@ public class ScholarshipService {
         scholarship.setDescription(request.getDescription());
         scholarship.setEligibility(request.getEligibility());
         scholarship.setDeadline(request.getDeadline());
+        scholarship.setFunder(request.getFunder());
+        scholarship.setAmount(request.getAmount());
+        scholarship.setCurrency(request.getCurrency());
+        scholarship.setRegion(request.getRegion());
+        scholarship.setLevel(request.getLevel());
         scholarship.setArchived(request.isArchived());
     }
 }

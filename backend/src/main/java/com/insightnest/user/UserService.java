@@ -8,15 +8,24 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher eventPublisher;
 
-    public UserService(UserRepository userRepository, ApplicationEventPublisher eventPublisher) {
+    public UserService(UserRepository userRepository,
+                       RefreshTokenRepository refreshTokenRepository,
+                       PasswordEncoder passwordEncoder,
+                       ApplicationEventPublisher eventPublisher) {
         this.userRepository = userRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
+        this.passwordEncoder = passwordEncoder;
         this.eventPublisher = eventPublisher;
     }
 
@@ -40,5 +49,18 @@ public class UserService {
         eventPublisher.publishEvent(new AuditEvent(getCurrentUser(),
                 suspended ? "USER_SUSPENDED" : "USER_REACTIVATED", "User", saved.getId(), saved.getEmail()));
         return saved;
+    }
+
+    @Transactional
+    public void changePassword(String currentPassword, String newPassword) {
+        User user = getCurrentUser();
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "Current password is incorrect");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        // Revoke all refresh tokens for this user
+        refreshTokenRepository.deleteByUser(user);
+        eventPublisher.publishEvent(new AuditEvent(user, "PASSWORD_CHANGED", "User", user.getId(), null));
     }
 }

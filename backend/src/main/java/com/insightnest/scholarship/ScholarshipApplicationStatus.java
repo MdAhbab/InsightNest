@@ -4,5 +4,6 @@ public enum ScholarshipApplicationStatus {
     PENDING,
     APPROVED,
     REJECTED,
-    NEEDS_INFO
+    NEEDS_INFO,
+    WITHDRAWN
 }

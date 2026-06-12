@@ -36,8 +36,13 @@ public class LibraryResourceController {
     public ResourceResponse upload(@RequestParam String title,
                                    @RequestParam(required = false) String description,
                                    @RequestParam(defaultValue = "true") boolean publicAccess,
+                                   @RequestParam(required = false) String author,
+                                   @RequestParam(required = false) Integer year,
+                                   @RequestParam(required = false) Integer pages,
+                                   @RequestParam(required = false) String field,
                                    @RequestParam MultipartFile file) {
-        return ResourceResponse.from(resourceService.upload(title, description, publicAccess, file));
+        return ResourceResponse.from(resourceService.upload(title, description, publicAccess,
+                author, year, pages, field, file));
     }
 
     @GetMapping("/{id}/download")

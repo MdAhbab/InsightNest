@@ -23,6 +23,7 @@ public class Program extends BaseEntity {
     private String description;
 
     private LocalDate applicationDeadline;
+    private String tuition;
 
     @ManyToOne
     private University university;
@@ -75,6 +76,14 @@ public class Program extends BaseEntity {
 
     public void setApplicationDeadline(LocalDate applicationDeadline) {
         this.applicationDeadline = applicationDeadline;
+    }
+
+    public String getTuition() {
+        return tuition;
+    }
+
+    public void setTuition(String tuition) {
+        this.tuition = tuition;
     }
 
     public University getUniversity() {

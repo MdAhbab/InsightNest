@@ -31,7 +31,7 @@ public class WebinarController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('FACULTY')")
+    @PreAuthorize("hasAnyRole('FACULTY','ADMIN','UNIVERSITY_REP')")
     public WebinarResponse create(@Valid @RequestBody WebinarRequest request) {
         return WebinarResponse.from(webinarService.create(request));
     }

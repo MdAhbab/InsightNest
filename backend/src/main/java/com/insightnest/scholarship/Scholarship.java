@@ -20,6 +20,16 @@ public class Scholarship extends BaseEntity {
     private String eligibility;
 
     private LocalDate deadline;
+    private String funder;
+
+    @Column(precision = 12, scale = 2)
+    private java.math.BigDecimal amount;
+
+    @Column(length = 3)
+    private String currency;
+
+    private String region;
+    private String level;
     private boolean archived = false;
 
     public String getTitle() {
@@ -52,6 +62,46 @@ public class Scholarship extends BaseEntity {
 
     public void setDeadline(LocalDate deadline) {
         this.deadline = deadline;
+    }
+
+    public String getFunder() {
+        return funder;
+    }
+
+    public void setFunder(String funder) {
+        this.funder = funder;
+    }
+
+    public java.math.BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(java.math.BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public String getLevel() {
+        return level;
+    }
+
+    public void setLevel(String level) {
+        this.level = level;
     }
 
     public boolean isArchived() {

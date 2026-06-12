@@ -17,4 +17,5 @@ public interface ScholarshipApplicationRepository extends JpaRepository<Scholars
     Page<ScholarshipApplication> findAll(Pageable pageable);
 
     boolean existsByScholarshipAndLearner(Scholarship scholarship, User learner);
+    long countByStatus(ScholarshipApplicationStatus status);
 }

@@ -19,7 +19,35 @@ public class University extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    private Integer foundedYear;
+    private Integer studentCount;
+    private String tags;  // comma-separated; DTO exposes as String[]
+
     private boolean archived = false;
+
+    public Integer getFoundedYear() {
+        return foundedYear;
+    }
+
+    public void setFoundedYear(Integer foundedYear) {
+        this.foundedYear = foundedYear;
+    }
+
+    public Integer getStudentCount() {
+        return studentCount;
+    }
+
+    public void setStudentCount(Integer studentCount) {
+        this.studentCount = studentCount;
+    }
+
+    public String getTags() {
+        return tags;
+    }
+
+    public void setTags(String tags) {
+        this.tags = tags;
+    }
 
     public String getName() {
         return name;

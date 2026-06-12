@@ -3,6 +3,7 @@ package com.insightnest.saved;
 import com.insightnest.exception.ApiException;
 import com.insightnest.program.ProgramRepository;
 import com.insightnest.research.ResearchProjectRepository;
+import com.insightnest.resource.LibraryResourceRepository;
 import com.insightnest.saved.dto.SavedItemRequest;
 import com.insightnest.scholarship.ScholarshipRepository;
 import com.insightnest.university.UniversityRepository;
@@ -23,6 +24,7 @@ public class SavedItemService {
     private final ScholarshipRepository scholarshipRepository;
     private final ResearchProjectRepository researchProjectRepository;
     private final WebinarRepository webinarRepository;
+    private final LibraryResourceRepository libraryResourceRepository;
 
     public SavedItemService(SavedItemRepository savedItemRepository,
                             UserService userService,
@@ -30,7 +32,8 @@ public class SavedItemService {
                             ProgramRepository programRepository,
                             ScholarshipRepository scholarshipRepository,
                             ResearchProjectRepository researchProjectRepository,
-                            WebinarRepository webinarRepository) {
+                            WebinarRepository webinarRepository,
+                            LibraryResourceRepository libraryResourceRepository) {
         this.savedItemRepository = savedItemRepository;
         this.userService = userService;
         this.universityRepository = universityRepository;
@@ -38,6 +41,7 @@ public class SavedItemService {
         this.scholarshipRepository = scholarshipRepository;
         this.researchProjectRepository = researchProjectRepository;
         this.webinarRepository = webinarRepository;
+        this.libraryResourceRepository = libraryResourceRepository;
     }
 
     public List<SavedItem> listMine() {
@@ -72,6 +76,7 @@ public class SavedItemService {
             case SCHOLARSHIP -> scholarshipRepository.existsById(id);
             case RESEARCH_PROJECT -> researchProjectRepository.existsById(id);
             case WEBINAR -> webinarRepository.existsById(id);
+            case RESOURCE -> libraryResourceRepository.existsById(id);
         };
     }
 }

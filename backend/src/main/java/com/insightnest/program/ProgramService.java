@@ -96,6 +96,27 @@ public class ProgramService {
         return programApplicationRepository.findAll(pageable);
     }
 
+    public ProgramApplication withdrawApplication(Long id) {
+        User user = userService.getCurrentUser();
+        ProgramApplication application = programApplicationRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Application not found"));
+        if (!application.getLearner().getId().equals(user.getId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "You can only withdraw your own application");
+        }
+        if (application.getStatus() != ProgramApplicationStatus.PENDING
+                && application.getStatus() != ProgramApplicationStatus.NEEDS_INFO) {
+            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "Can only withdraw applications in PENDING or NEEDS_INFO status");
+        }
+        application.setStatus(ProgramApplicationStatus.WITHDRAWN);
+        ProgramApplication saved = programApplicationRepository.save(application);
+        eventPublisher.publishEvent(new ApplicationStatusChangedEvent(saved.getLearner(),
+                "Program application", saved.getProgram().getName(), saved.getStatus().name()));
+        eventPublisher.publishEvent(new AuditEvent(user, "PROGRAM_APPLICATION_WITHDRAWN",
+                "ProgramApplication", saved.getId(), saved.getProgram().getName()));
+        return saved;
+    }
+
     public ProgramApplication updateApplicationStatus(Long id, ApplicationStatusRequest request) {
         ProgramApplication application = programApplicationRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Application not found"));
@@ -118,6 +139,7 @@ public class ProgramService {
         program.setDuration(request.getDuration());
         program.setDescription(request.getDescription());
         program.setApplicationDeadline(request.getApplicationDeadline());
+        program.setTuition(request.getTuition());
         program.setUniversity(university);
         program.setArchived(request.isArchived());
     }

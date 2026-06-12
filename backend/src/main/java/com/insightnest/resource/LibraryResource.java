@@ -20,6 +20,11 @@ public class LibraryResource extends BaseEntity {
     private String fileName;
     private String filePath;
     private long fileSize;
+    private String author;
+    private Integer year;
+    private Integer pages;
+    private String field;
+    private String resourceType;
     private boolean publicAccess = true;
 
     @ManyToOne
@@ -72,6 +77,46 @@ public class LibraryResource extends BaseEntity {
 
     public void setPublicAccess(boolean publicAccess) {
         this.publicAccess = publicAccess;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
+    }
+
+    public Integer getYear() {
+        return year;
+    }
+
+    public void setYear(Integer year) {
+        this.year = year;
+    }
+
+    public Integer getPages() {
+        return pages;
+    }
+
+    public void setPages(Integer pages) {
+        this.pages = pages;
+    }
+
+    public String getField() {
+        return field;
+    }
+
+    public void setField(String field) {
+        this.field = field;
+    }
+
+    public String getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
     }
 
     public User getUploader() {

@@ -35,12 +35,21 @@ public class ResearchService {
     public ResearchProject createProject(ResearchProjectRequest request) {
         User user = userService.getCurrentUser();
         ResearchProject project = new ResearchProject();
+        applyRequest(project, request);
+        project.setCreatedBy(user);
+        return projectRepository.save(project);
+    }
+
+    private void applyRequest(ResearchProject project, ResearchProjectRequest request) {
         project.setTitle(request.getTitle());
         project.setDescription(request.getDescription());
         project.setRequiredSkills(request.getRequiredSkills());
         project.setTags(request.getTags());
-        project.setCreatedBy(user);
-        return projectRepository.save(project);
+        project.setLab(request.getLab());
+        project.setInstitution(request.getInstitution());
+        project.setOpenings(request.getOpenings());
+        project.setField(request.getField());
+        project.setDeadline(request.getDeadline());
     }
 
     public ResearchProject updateStatus(Long id, ResearchProjectStatusRequest request) {

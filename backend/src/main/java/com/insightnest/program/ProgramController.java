@@ -42,13 +42,13 @@ public class ProgramController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','UNIVERSITY_REP')")
     public ProgramResponse create(@Valid @RequestBody ProgramRequest request) {
         return ProgramResponse.from(programService.createProgram(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','UNIVERSITY_REP')")
     public ProgramResponse update(@PathVariable Long id, @Valid @RequestBody ProgramRequest request) {
         return ProgramResponse.from(programService.updateProgram(id, request));
     }
@@ -66,15 +66,21 @@ public class ProgramController {
         return programService.getMyApplications().stream().map(ProgramApplicationResponse::from).toList();
     }
 
+    @PostMapping("/applications/{id}/withdraw")
+    @PreAuthorize("hasRole('LEARNER')")
+    public ProgramApplicationResponse withdraw(@PathVariable Long id) {
+        return ProgramApplicationResponse.from(programService.withdrawApplication(id));
+    }
+
     @GetMapping("/applications")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','UNIVERSITY_REP')")
     public Page<ProgramApplicationResponse> allApplications(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return programService.getAllApplications(pageable).map(ProgramApplicationResponse::from);
     }
 
     @PatchMapping("/applications/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','UNIVERSITY_REP')")
     public ProgramApplicationResponse updateStatus(@PathVariable Long id,
                                                    @Valid @RequestBody ApplicationStatusRequest request) {
         return ProgramApplicationResponse.from(programService.updateApplicationStatus(id, request));

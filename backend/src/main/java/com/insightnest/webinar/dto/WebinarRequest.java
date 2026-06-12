@@ -14,6 +14,24 @@ public class WebinarRequest {
     @NotNull
     private LocalDateTime scheduledAt;
     private String meetingLink;
+    private Integer durationMinutes;
+    private String speakerAffiliation;
+
+    public Integer getDurationMinutes() {
+        return durationMinutes;
+    }
+
+    public void setDurationMinutes(Integer durationMinutes) {
+        this.durationMinutes = durationMinutes;
+    }
+
+    public String getSpeakerAffiliation() {
+        return speakerAffiliation;
+    }
+
+    public void setSpeakerAffiliation(String speakerAffiliation) {
+        this.speakerAffiliation = speakerAffiliation;
+    }
 
     public String getTitle() {
         return title;

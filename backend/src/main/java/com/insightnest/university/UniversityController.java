@@ -73,6 +73,9 @@ public class UniversityController {
         university.setRanking(request.getRanking());
         university.setWebsite(request.getWebsite());
         university.setDescription(request.getDescription());
+        university.setFoundedYear(request.getFoundedYear());
+        university.setStudentCount(request.getStudentCount());
+        university.setTags(request.getTags());
         university.setArchived(request.isArchived());
     }
 }

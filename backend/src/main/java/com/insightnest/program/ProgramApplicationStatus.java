@@ -4,5 +4,6 @@ public enum ProgramApplicationStatus {
     PENDING,
     APPROVED,
     REJECTED,
-    NEEDS_INFO
+    NEEDS_INFO,
+    WITHDRAWN
 }

@@ -22,6 +22,8 @@ public class Webinar extends BaseEntity {
 
     private LocalDateTime scheduledAt;
     private String meetingLink;
+    private Integer durationMinutes;
+    private String speakerAffiliation;
     @Enumerated(EnumType.STRING)
     private WebinarStatus status = WebinarStatus.SCHEDULED;
 
@@ -66,6 +68,22 @@ public class Webinar extends BaseEntity {
 
     public void setStatus(WebinarStatus status) {
         this.status = status;
+    }
+
+    public Integer getDurationMinutes() {
+        return durationMinutes;
+    }
+
+    public void setDurationMinutes(Integer durationMinutes) {
+        this.durationMinutes = durationMinutes;
+    }
+
+    public String getSpeakerAffiliation() {
+        return speakerAffiliation;
+    }
+
+    public void setSpeakerAffiliation(String speakerAffiliation) {
+        this.speakerAffiliation = speakerAffiliation;
     }
 
     public User getHost() {

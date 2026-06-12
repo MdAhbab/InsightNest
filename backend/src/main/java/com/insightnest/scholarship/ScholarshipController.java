@@ -42,13 +42,13 @@ public class ScholarshipController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','UNIVERSITY_REP')")
     public ScholarshipResponse create(@Valid @RequestBody ScholarshipRequest request) {
         return ScholarshipResponse.from(scholarshipService.createScholarship(request));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','UNIVERSITY_REP')")
     public ScholarshipResponse update(@PathVariable Long id, @Valid @RequestBody ScholarshipRequest request) {
         return ScholarshipResponse.from(scholarshipService.updateScholarship(id, request));
     }
@@ -66,15 +66,21 @@ public class ScholarshipController {
         return scholarshipService.getMyApplications().stream().map(ScholarshipApplicationResponse::from).toList();
     }
 
+    @PostMapping("/applications/{id}/withdraw")
+    @PreAuthorize("hasRole('LEARNER')")
+    public ScholarshipApplicationResponse withdraw(@PathVariable Long id) {
+        return ScholarshipApplicationResponse.from(scholarshipService.withdrawApplication(id));
+    }
+
     @GetMapping("/applications")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','UNIVERSITY_REP')")
     public Page<ScholarshipApplicationResponse> allApplications(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return scholarshipService.getAllApplications(pageable).map(ScholarshipApplicationResponse::from);
     }
 
     @PatchMapping("/applications/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','UNIVERSITY_REP')")
     public ScholarshipApplicationResponse updateStatus(@PathVariable Long id,
                                                        @Valid @RequestBody ScholarshipStatusRequest request) {
         return ScholarshipApplicationResponse.from(scholarshipService.updateStatus(id, request));

@@ -5,5 +5,6 @@ public enum SavedItemType {
     PROGRAM,
     SCHOLARSHIP,
     RESEARCH_PROJECT,
-    WEBINAR
+    WEBINAR,
+    RESOURCE
 }

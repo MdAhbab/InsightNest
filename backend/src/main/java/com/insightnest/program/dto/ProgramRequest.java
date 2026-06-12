@@ -15,6 +15,7 @@ public class ProgramRequest {
     private String duration;
     private String description;
     private LocalDate applicationDeadline;
+    private String tuition;
     @NotNull
     private Long universityId;
     private boolean archived;
@@ -65,6 +66,14 @@ public class ProgramRequest {
 
     public void setApplicationDeadline(LocalDate applicationDeadline) {
         this.applicationDeadline = applicationDeadline;
+    }
+
+    public String getTuition() {
+        return tuition;
+    }
+
+    public void setTuition(String tuition) {
+        this.tuition = tuition;
     }
 
     public Long getUniversityId() {

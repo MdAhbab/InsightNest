@@ -11,4 +11,5 @@ public interface ResearchJoinRequestRepository extends JpaRepository<ResearchJoi
     List<ResearchJoinRequest> findByProjectCreatedBy(User owner);
 
     boolean existsByProjectAndRequester(ResearchProject project, User requester);
+    long countByStatus(ResearchJoinStatus status);
 }
