@@ -396,6 +396,37 @@ def ensure_mysql_reachable(env: Dict[str, str], *, skip_check: bool) -> None:
     )
 
 
+def check_ollama(env: Dict[str, str]) -> None:
+    """Non-fatal preflight for the AI agents. Reports the configured LLM and warns if the
+    local Ollama or the chosen model is missing. Never raises: the backend falls back to the
+    OpenAI/Gemini providers and finally the heuristic brain, so the app always runs."""
+    enabled = env.get("AGENT_LLM_ENABLED", "false").strip().lower() in ("1", "true", "yes", "on")
+    if not enabled:
+        log("AI agents: LLM disabled (AGENT_LLM_ENABLED=false) — using the deterministic heuristic brain.")
+        return
+
+    base = env.get("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
+    model = env.get("OLLAMA_MODEL", "gemma4:e4b")
+    providers = env.get("AGENT_LLM_PROVIDERS", "ollama,openai,gemini")
+    fallbacks = [name for name, key in (("openai", "OPENAI_API_KEY"), ("gemini", "GEMINI_API_KEY"))
+                 if env.get(key, "").strip()]
+    fb = ", ".join(fallbacks) if fallbacks else "none configured"
+    log(f"AI agents: LLM enabled — providers '{providers}', Ollama model '{model}', fallbacks: {fb}.")
+
+    try:
+        req = urllib.request.Request(base + "/api/tags", headers={"User-Agent": "insightnest-launcher/1.0"})
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            body = resp.read().decode("utf-8", "replace")
+        if model in body or model.split(":")[0] in body:
+            log(f"Ollama is reachable and a '{model}' tag is present.")
+        else:
+            log(f"WARNING: Ollama is reachable but model '{model}' was not found. "
+                f"Run `ollama pull {model}` or set OLLAMA_MODEL; until then agents use fallbacks/heuristic.")
+    except Exception as exc:  # noqa: BLE001 - any failure here is non-fatal by design
+        log(f"WARNING: Ollama not reachable at {base} ({exc}). "
+            f"Agents will try fallbacks ({fb}) then the heuristic brain — nothing will break.")
+
+
 def port_available(port: int) -> bool:
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -522,6 +553,7 @@ def main() -> int:
     env["VITE_API_URL"] = f"http://localhost:{backend_port}/api/v1"
 
     ensure_mysql_reachable(env, skip_check=args.skip_db_check)
+    check_ollama(env)
     maybe_install_dependencies(
         env,
         skip_install=args.skip_install,
