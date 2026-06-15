@@ -371,3 +371,44 @@ programs/scholarships/resources.
       empty-corpus Librarian; no-profile Matchmaker.
 - [ ] `mvn test` + frontend `npm run build` (typecheck) green.
 - [ ] No secrets committed; clean, modular git history; pushed.
+
+---
+
+## 12. Implementation Progress & Verification (live log)
+
+**Branch:** `feat/agentic-llm-integration` (3 modular commits; not pushed — awaiting review).
+
+**Phase 3 — Agentic LLM integration: DONE & VERIFIED END-TO-END.**
+- Built `com.insightnest.agent.llm` (ChatModel + Ollama/OpenAI/Gemini providers over JDK
+  HttpClient + `ResilientChatModel` fallback chain) and `GemmaBrain` (grounded narration over
+  `HeuristicBrain` retrieval, `@Primary` + `@ConditionalOnProperty agent.llm.enabled`).
+  Config via `AgentLlmProperties` + `application.yml` `agent` block; env documented; stale
+  `AgentConfig` retired. Local model confirmed: **`gemma4:e4b`** (`qwen3.5:4b` also available).
+- Verified: `mvn compile` green; live Ollama `/api/chat` round-trip; backend boots with
+  `GemmaBrain active` logged (context wiring correct, no bean conflicts).
+- Verified end-to-end via the live API (logged in as the seeded learner):
+  - **Counsellor** → personalised, profile-grounded advice citing real programmes +
+    scholarships (5 citations), asked a clarifying question, no hallucination.
+  - **Matchmaker** → score + LLM rationale grounded in the learner's actual projects
+    (the `n| rationale` parse path works).
+  - **Librarian** → grounded answer; correctly *refused* when retrieval was weak (no improvising).
+- Fallback chain proven by design: providers tried in order, then heuristic if all fail, so
+  endpoints never hard-fail. OpenAI/Gemini activate when their keys are added to `backend/.env`.
+
+**Phase 2 — Seeding: DONE** (`saved_items` added; resources/profiles already rich — see §3).
+
+### Known data-state action (not a code issue)
+- The **running MySQL DB holds a stale partial seed (3 resources vs the 10 in
+  `seed/insightnest_seed.sql`)**, and the new `saved_items` aren't loaded yet. Re-import to
+  fix — this makes the Librarian cite the full corpus (incl. the SOP guide) and populates the
+  dashboard saved shelf + Digest saved path:
+  ```bash
+  mysql -u root -proot insightnest < seed/insightnest_seed.sql
+  ```
+
+### Still open (per phases 1, 4, 5)
+- Full dashboard click-through per role (§5) — backend boots and core endpoints return 200;
+  per-feature UI verification not yet run.
+- Proactive Sentinel scheduled job (A3/G16), optional draft-join-request (A5/G15),
+  launcher Ollama awareness (G18), SSE streaming (G17, optional).
+- Push after review.
