@@ -396,19 +396,34 @@ programs/scholarships/resources.
   endpoints never hard-fail. OpenAI/Gemini activate when their keys are added to `backend/.env`.
 
 **Phase 2 — Seeding: DONE** (`saved_items` added; resources/profiles already rich — see §3).
+The dev DB was reset and the current seed re-imported clean: 7 users, 20 universities,
+18 programs, 14 scholarships, **10 resources**, 9 research projects, **14 saved_items**, 8
+webinars, 8 forum threads.
 
-### Known data-state action (not a code issue)
-- The **running MySQL DB holds a stale partial seed (3 resources vs the 10 in
-  `seed/insightnest_seed.sql`)**, and the new `saved_items` aren't loaded yet. Re-import to
-  fix — this makes the Librarian cite the full corpus (incl. the SOP guide) and populates the
-  dashboard saved shelf + Digest saved path:
+**Phase 4 — Dashboard verification: DONE (API level).** All read endpoints behind the four
+portals return HTTP 200 for their role (learner, faculty, rep, admin) — 25 endpoints checked.
+A save→unsave write round-trip succeeds. Frontend `npm run build` and `tsc --noEmit` pass.
+`mvn test` is green. (Pixel-level UI click-through in a browser is the one thing not automated
+here, but every data path each dashboard depends on is verified live.)
+
+**Phase 5 — Proactive Sentinel: DONE & VERIFIED.** `SentinelService` + gated weekly
+`SentinelScheduler` (`agent.sentinel.enabled`, Mon 07:00) + on-demand
+`POST /agent/sentinel/run` + a Digest-page "deliver to my notifications" action. Verified:
+two consecutive runs produce exactly **one** "Deadline Sentinel — 2026-W25" notification
+(idempotent), with a correctly composed urgent/approaching/webinar summary.
+**Launcher (G18): DONE** — `run.py` reports the LLM config and probes Ollama (non-fatal).
+
+### Re-import note (resolved)
+- The dev DB previously held a stale partial seed; it has now been **reset and re-imported
+  clean**. To reproduce on another machine:
   ```bash
+  mysql -u root -proot -e "DROP DATABASE IF EXISTS insightnest; CREATE DATABASE insightnest;"
+  # start the backend once to build the schema (ddl-auto=update), then:
   mysql -u root -proot insightnest < seed/insightnest_seed.sql
   ```
 
-### Still open (per phases 1, 4, 5)
-- Full dashboard click-through per role (§5) — backend boots and core endpoints return 200;
-  per-feature UI verification not yet run.
-- Proactive Sentinel scheduled job (A3/G16), optional draft-join-request (A5/G15),
-  launcher Ollama awareness (G18), SSE streaming (G17, optional).
-- Push after review.
+### Still open (deferred / optional)
+- Pixel-level browser click-through of each dashboard (data paths already verified via API).
+- Optional: agent draft-join-request (A5/G15), SSE token streaming (G17), embeddings-based
+  Librarian (A4). All explicitly out of scope for now (see §9).
+- Merge `feat/agentic-llm-integration` → `main` and push.
