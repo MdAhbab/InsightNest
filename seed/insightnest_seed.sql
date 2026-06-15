@@ -884,3 +884,28 @@ INSERT INTO faqs (question, answer, active, created_at, updated_at) VALUES
 -- Optional refresh token placeholder for local database smoke tests.
 INSERT INTO refresh_tokens (token, expires_at, revoked, user_id, created_at, updated_at)
 VALUES ('seed-refresh-token', DATE_ADD(@now, INTERVAL 7 DAY), 0, @admin_id, @now, @now);
+
+-- ---------------------------------------------------------------------------
+-- Saved items — gives the learner dashboards a populated "saved" shelf and feeds
+-- the Deadline Sentinel digest (saved programmes/scholarships with deadlines).
+-- Deleted-then-inserted so re-running the seed stays idempotent regardless of
+-- whether the unique key was created.
+-- ---------------------------------------------------------------------------
+DELETE FROM saved_items
+WHERE user_id IN (@learner_nusrat_id, @learner_rafiul_id, @learner_tanjila_id);
+
+INSERT INTO saved_items (user_id, item_type, item_id, created_at, updated_at) VALUES
+    (@learner_nusrat_id, 'PROGRAM', @prog_cse, @now, @now),
+    (@learner_nusrat_id, 'PROGRAM', @prog_ds, @now, @now),
+    (@learner_nusrat_id, 'SCHOLARSHIP', @scholar_merit, @now, @now),
+    (@learner_nusrat_id, 'SCHOLARSHIP', @scholar_ict, @now, @now),
+    (@learner_nusrat_id, 'UNIVERSITY', @uni_buet, @now, @now),
+    (@learner_nusrat_id, 'WEBINAR', @webinar_funding, @now, @now),
+    (@learner_nusrat_id, 'RESEARCH_PROJECT', @proj_flood, @now, @now),
+    (@learner_rafiul_id, 'PROGRAM', @prog_mba, @now, @now),
+    (@learner_rafiul_id, 'SCHOLARSHIP', @scholar_prime, @now, @now),
+    (@learner_rafiul_id, 'UNIVERSITY', @uni_oxford, @now, @now),
+    (@learner_rafiul_id, 'WEBINAR', @webinar_admission, @now, @now),
+    (@learner_tanjila_id, 'PROGRAM', @prog_civil, @now, @now),
+    (@learner_tanjila_id, 'SCHOLARSHIP', @scholar_ugc, @now, @now),
+    (@learner_tanjila_id, 'RESEARCH_PROJECT', @proj_mobility, @now, @now);
