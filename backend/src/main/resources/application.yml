@@ -53,3 +53,8 @@ agent:
     api-key: ${GEMINI_API_KEY:}
     model: ${GEMINI_MODEL:gemini-2.0-flash}
     base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+  # Deadline Sentinel weekly digest fan-out. Off by default so it never fires unexpectedly
+  # in dev; the on-demand POST /api/v1/agent/sentinel/run endpoint works regardless.
+  sentinel:
+    enabled: ${AGENT_SENTINEL_ENABLED:false}
+    cron: ${AGENT_SENTINEL_CRON:0 0 7 * * MON}

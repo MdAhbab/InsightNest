@@ -29,6 +29,19 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
+    /**
+     * Creates a notification, first removing any existing one with the same title for this user.
+     * Used by the Deadline Sentinel so a weekly digest is replaced, never duplicated, on re-run.
+     */
+    @Transactional
+    public void notifyReplacingByTitle(User user, String title, String message) {
+        if (user == null) {
+            return;
+        }
+        notificationRepository.deleteByUserAndTitle(user, title);
+        notify(user, title, message);
+    }
+
     public Page<Notification> listFor(User user, Pageable pageable) {
         return notificationRepository.findByUser(user, pageable);
     }

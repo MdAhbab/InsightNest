@@ -937,3 +937,8 @@ export function agentLibrarian(payload: { question: string }): Promise<Librarian
 export function agentDigest(): Promise<DigestResponse> {
   return apiGet<DigestResponse>("/agent/digest");
 }
+
+/** Deadline Sentinel: generate the digest and deliver it as an in-app notification. */
+export function agentSentinelRun(): Promise<DigestResponse> {
+  return apiPost<DigestResponse>("/agent/sentinel/run");
+}

@@ -4,7 +4,7 @@ import { useSession } from "../providers/SessionProvider";
 import { useToast } from "../components/Toast";
 import { ApiError } from "../api/client";
 import { fmtDate } from "../api/format";
-import { agentDigest, DigestItem, DigestResponse } from "../api/endpoints";
+import { agentDigest, agentSentinelRun, DigestItem, DigestResponse } from "../api/endpoints";
 
 // ─── Snooze / remove helpers (UI-local, localStorage) ────────────────────────
 // Per INTEGRATION_AUDIT §2: "digest snooze (localStorage)" stays UI-local.
@@ -65,6 +65,7 @@ export default function Digest() {
   const [digest, setDigest] = useState<DigestResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [delivering, setDelivering] = useState(false);
   // UI-local hidden tracking
   const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(getHiddenIds);
 
@@ -82,6 +83,19 @@ export default function Digest() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const deliver = async () => {
+    setDelivering(true);
+    try {
+      const data = await agentSentinelRun();
+      setDigest(data);
+      toast("Bulletin delivered to your notifications.", "ok");
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : "Could not deliver the bulletin.", "err");
+    } finally {
+      setDelivering(false);
+    }
+  };
 
   const handleRemove = (item: DigestItem) => {
     const k = itemKey(item);
@@ -139,6 +153,14 @@ export default function Digest() {
           <div className="col-span-12 md:col-span-3"><span style={{ color: "var(--gold)" }}>FOR THE ATTENTION OF</span> · {firstName} S.</div>
           <div className="col-span-12 md:col-span-3"><span style={{ color: "var(--gold)" }}>WEEK</span> · {getISOWeek()}</div>
         </div>
+
+        {!loading && !error && (
+          <div className="flex justify-end mt-4">
+            <button onClick={deliver} disabled={delivering} className="btn-ink btn-ghost self-end">
+              <span>{delivering ? "Delivering…" : "Deliver this bulletin to my notifications"}</span>
+            </button>
+          </div>
+        )}
 
         {loading && <Skeleton />}
 

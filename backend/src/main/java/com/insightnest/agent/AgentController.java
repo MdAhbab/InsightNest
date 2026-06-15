@@ -16,9 +16,11 @@ import java.util.List;
 @RequestMapping("/api/v1/agent")
 public class AgentController {
     private final AgentService agentService;
+    private final SentinelService sentinelService;
 
-    public AgentController(AgentService agentService) {
+    public AgentController(AgentService agentService, SentinelService sentinelService) {
         this.agentService = agentService;
+        this.sentinelService = sentinelService;
     }
 
     @PostMapping("/counsellor")
@@ -40,5 +42,11 @@ public class AgentController {
     @GetMapping("/digest")
     public DigestResponse digest() {
         return agentService.digest();
+    }
+
+    /** Deadline Sentinel: generate this user's digest and deliver it as an in-app notification. */
+    @PostMapping("/sentinel/run")
+    public DigestResponse runSentinel() {
+        return sentinelService.runForCurrentUser();
     }
 }
